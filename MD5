@@ -1,0 +1,15 @@
+c3acf8b50080a8414163148f54059da3 *DESCRIPTION
+8b54e5a89fbda3af5e077053d40bec76 *NAMESPACE
+2317f306eab1511dad27f4679c4d0556 *R/svgviewr.lines.R
+7ddd492e99d303c9d283cfdf5cbd1259 *R/svgviewr.new.R
+7ed6ed7927180825ec01cd90931f6ed9 *R/svgviewr.pathsC.R
+4c4b26c796a45f8a3a29edafdcbcbf74 *R/svgviewr.points.R
+c362ef1a6f4042b098b0c64e7f6867f5 *R/svgviewr.write.R
+eeb691fe809ce56aea3091290409a721 *inst/extdata/svg_viewer_3d_n.js
+855395df6e957728e6e6001892b6e1b8 *inst/extdata/svg_viewer_n.js
+02d7b0551cfcc5c656445abb8f379d1f *inst/extdata/ui_functions.js
+055423fabb35b801ce70bc3047016773 *man/svgViewR-package.Rd
+24bd4584f66905f251ba35cb89e76c47 *man/svgviewr.lines.Rd
+1cc91b79eb5f52445baadf0f4ab632ff *man/svgviewr.new.Rd
+3582d4eb66d4f72cb94767818f9976ca *man/svgviewr.pathsC.Rd
+cd0f51928329fecd097704f3cd0eac14 *man/svgviewr.points.Rd
