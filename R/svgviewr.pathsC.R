@@ -32,7 +32,7 @@ svgviewr.pathsC <- function(path, file=NULL, col=NULL, col.fill="none", col.stro
 		if(index.add > 0) path[[i]] <- path[[i]] + rep(index.add, length(path[[i]]))		
 
 		# SAVE ROWS AS SPACE DELIMITED VECTOR FOR SVG, SUBTRACT 1 SINCE JAVASCRIPT VECTORS START AT 0
-		new_lines[i] <- paste("\t<pathC z-index=\"", z.index[i], "\" layer=\"", layer[i], "\" label=\"", label[i], "\" stroke=\"", col.stroke[i], "\" stroke-width=\"", lwd[i], "\" stroke-opacity=\"", opacity.stroke[i], "\" fill=\"", col.fill[i], "\" fill-opacity=\"", opacity.fill[i], "\" d=\"", paste(path[[i]] - 1, collapse=" "), "\" />", sep="")
+		new_lines[i] <- paste("\t<pathC z-index=\"", z.index[i], "\" layer=\"", layer[i], "\" label=\"", label[i], "\" stroke=\"", col.stroke[i], "\" stroke-width=\"", lwd[i], "\" stroke-opacity=\"", opacity.stroke[i], "\" fill=\"", col.fill[i], "\" fill-opacity=\"", opacity.fill[i], "\" d=\"", paste(path[[i]], collapse=","), "\" />", sep="")
 	}
 
 	# IF FILE IS NULL, RETURN LINES OF SVG OBJECTS

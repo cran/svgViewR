@@ -56,7 +56,7 @@ for(i in 1:dim(x)[3])
 		cbind(x_seq[(dim(x)[1]/2):1], -n_seq[i]*sqrt(1 - x_seq[(dim(x)[1]/2):1]^2)))
 
 # ADD POINTS TO SVG VIEWER
-svg_points <- svgviewr.points(x, cex=1, lwd=1, col="blue", file=file, animate=TRUE)
+svg_points <- svgviewr.points(x, cex=1, lwd=1, col="blue", file=file)
 
 # ADD PATH TO SVG VIEWER
 svgviewr.pathsC(1:dim(x)[1], file=file, col.fill="blue", opacity.fill=0.1, 

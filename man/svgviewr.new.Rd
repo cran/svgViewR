@@ -4,7 +4,7 @@
 \description{Creates a new SVG Viewer file as an HTML document to which SVG objects can be added, with optional specification of various animation parameters.}
 \usage{
 svgviewr.new(file, window.title="SVG Viewer", animate.duration = 1, 
-             animate.reverse = FALSE, animate.repeat = -1)
+             animate.reverse = FALSE, animate.repeat = -1, fdir = NULL)
 }
 \arguments{
   \item{file}{File path and name (having the extenstion ".html") where SVG Viewer will be created.}
@@ -12,6 +12,7 @@ svgviewr.new(file, window.title="SVG Viewer", animate.duration = 1,
   \item{animate.duration}{The approximate duration in seconds of the animation. When the number of objects to be displayed is large, the actual duration might exceed this number.}
   \item{animate.reverse}{A logical indicating whether the animation is to be played in reverse after each iteration.}
   \item{animate.repeat}{An integer specifying the number of times the animation will repeat. A value of \code{-1} will cause the animation to repeat indefinitely.}
+  \item{fdir}{Used to set web code source explicitly for debugging.}
 }
 \details{
 This function is used to initialize a new SVG Viewer file. Before adding shapes to an SVG Viewer, this function is called to create the HTML document structure to which the SVG objects can be added. The SVG Viewer file can be opened with any compatible web browser (Safari, Firefox, Chrome, Opera). When the file is opened, the SVG shapes will be automatically scaled to fit the web browser and drawn onto a white background. Re-sizing the browswer window will automatically re-size the shapes to fit the browser window. If the shapes are animated, the animation will begin immediately upon opening the window. The shapes and animation are interactive and can be controlled via the keyboard/mouse commands listed below.
@@ -56,7 +57,7 @@ n_seq <- seq(0, 2*pi, length=n)
 for(i in 1:dim(x)[3]) x[, , i] <- cbind(x_seq, sin(x_seq + n_seq[i]))
 	
 # ADD POINTS TO SVG VIEWER
-svg_points <- svgviewr.points(x, cex=2, lwd=1, col="blue", file=file, animate=TRUE)
+svg_points <- svgviewr.points(x, cex=2, lwd=1, col="blue", file=file)
 
 ## OPEN THE SPECIFIED FILE IN A WEB BROWSER TO VIEW
 

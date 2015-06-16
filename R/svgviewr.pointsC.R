@@ -1,6 +1,7 @@
-svgviewr.points <- function(x, file=NULL, y=NULL, type="p", col=NULL, col.fill="black", 
+svgviewr.pointsC <- function(x, file=NULL, y=NULL, type="p", col=NULL, col.fill="black", 
 	col.stroke="black", z.index=0, layer="", label="", cex=2, lwd=2, opacity.stroke=1, 
-	opacity.fill=1, animate=NULL, append=TRUE, tag.name="point"){
+	opacity.fill=1, col.fill.C="none", col.stroke.C="black", z.index.C=0, lwd.C=1, 
+	opacity.stroke.C=1, opacity.fill.C=1, layer.C=NULL, append=TRUE, tag.name="point"){
 
 	# IF Y IS NON-NULL, ADD AS SECOND COLUMN TO X
 	if(!is.null(y)) x <- cbind(x, y)
@@ -35,8 +36,11 @@ svgviewr.points <- function(x, file=NULL, y=NULL, type="p", col=NULL, col.fill="
 	if(!is.null(col)){col.fill <- col;col.stroke <- col}
 
 	# SET GRAPHICAL PARAMETERS
+	if(is.null(layer.C)) layer.C <- layer
 	svg_gp <- c("col", "col.fill", "col.stroke", "label", "layer", "opacity.fill", 
 		"opacity.stroke", "cex", "lwd", "z.index")
+	#"col.fill.C", "col.stroke.C", 
+	#	"z.index.C", "lwd.C", "opacity.stroke.C", "opacity.fill.C"
 
 	# CONVERT GRAPHICAL PARAMETERS TO VECTORS WITH SAME NUMBER OF ELEMENTS OF FIRST X DIMENSION
 	for(gpar in svg_gp){
@@ -74,6 +78,22 @@ svgviewr.points <- function(x, file=NULL, y=NULL, type="p", col=NULL, col.fill="
 			"\" stroke-width=\"", lwd[i], "\" fill=\"", col.fill[i], "\" fill-opacity=\"", opacity.fill[i], 
 			"\" stroke-opacity=\"", opacity.stroke[i], "\" />", sep="")
 	}
+	
+	# WRITE LINES TO SVG
+	num_points <- 0
+	if(!is.null(file)){
+
+		# COUNT THE NUMBER OF POINT TAGS ALREADY IN THE SVG FILE
+		file_read <- readChar(file, file.info(file)$size)
+		str_split <- strsplit(file_read, "<point ")[[1]]
+		num_points <- length(str_split) - 1
+	}
+	
+	# STRING OF POINTS TO CONNECT
+	new_lines[length(new_lines)+1] <- paste("\t<pathC z-index=\"", z.index.C, "\" layer=\"", layer.C, 
+		"\" d=\"", paste(1:dim(x)[1] + num_points, collapse=","), "\" stroke=\"", col.stroke.C, 
+		"\" stroke-width=\"", lwd.C, "\" fill=\"", col.fill.C, "\" fill-opacity=\"", opacity.fill.C, 
+		"\" stroke-opacity=\"", opacity.stroke.C, "\" />", sep="")
 
 	# REMOVE SCIENTIFIC NOTATION
 	options(scipen=0)

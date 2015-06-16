@@ -1,6 +1,7 @@
-svgviewr.points <- function(x, file=NULL, y=NULL, type="p", col=NULL, col.fill="black", 
-	col.stroke="black", z.index=0, layer="", label="", cex=2, lwd=2, opacity.stroke=1, 
-	opacity.fill=1, animate=NULL, append=TRUE, tag.name="point"){
+svgviewr.text <- function(x, file = NULL, y = NULL, labels = NULL, layer="", 
+	font.size = 12, col = "black", text.anchor = "middle", font.family = "Arial", 
+	opacity = 1, font.style = "", font.weight = "", letter.spacing = 0, writing.mode = "", 
+	glyph.orientation.vertical = "", z.index=0, append=TRUE){
 
 	# IF Y IS NON-NULL, ADD AS SECOND COLUMN TO X
 	if(!is.null(y)) x <- cbind(x, y)
@@ -31,12 +32,10 @@ svgviewr.points <- function(x, file=NULL, y=NULL, type="p", col=NULL, col.fill="
 		x <- xn
 	}
 
-	# IF COL IS SPECIFIED, OVERWRITE FILL AND STROKE
-	if(!is.null(col)){col.fill <- col;col.stroke <- col}
-
 	# SET GRAPHICAL PARAMETERS
-	svg_gp <- c("col", "col.fill", "col.stroke", "label", "layer", "opacity.fill", 
-		"opacity.stroke", "cex", "lwd", "z.index")
+	svg_gp <- c("labels", "layer", "font.size", "col", "text.anchor", "font.family", 
+		"opacity", "font.style", "font.weight", "letter.spacing", "writing.mode", 
+		"glyph.orientation.vertical", "z.index")
 
 	# CONVERT GRAPHICAL PARAMETERS TO VECTORS WITH SAME NUMBER OF ELEMENTS OF FIRST X DIMENSION
 	for(gpar in svg_gp){
@@ -47,10 +46,7 @@ svgviewr.points <- function(x, file=NULL, y=NULL, type="p", col=NULL, col.fill="
 		}
 	}
 
-	cp <- ""
-	if(tag.name == "circle") cp <- "c"
-
-	# WRITE POINTS TO SVG STRUCTURE
+	# WRITE TEXT ELEMENTS TO SVG STRUCTURE
 	for(i in 1:dim(x)[1]){
 
 		# COLLAPSE VALUES INTO COMMA-SEPARATED STRING
@@ -66,13 +62,14 @@ svgviewr.points <- function(x, file=NULL, y=NULL, type="p", col=NULL, col.fill="
 			zc <- x[i, 3, 1]
 		}
 
-		new_lines[i] <- paste("\t<", tag.name, " z-index=\"", z.index[i], "\" layer=\"", layer[i], 
-			"\" ", cp, "x=\"", xc, "\" ", cp, 
-			"y=\"", yc, "\" ", cp, 
-			"z=\"", zc, 
-			"\" label=\"", label[i], "\" r=\"", cex[i], "\" stroke=\"", col.stroke[i], 
-			"\" stroke-width=\"", lwd[i], "\" fill=\"", col.fill[i], "\" fill-opacity=\"", opacity.fill[i], 
-			"\" stroke-opacity=\"", opacity.stroke[i], "\" />", sep="")
+		new_lines[i] <- paste("\t<text z-index=\"", z.index[i], "\" layer=\"", layer[i], 
+			"\" x=\"", xc, "\" y=\"", yc, "\" z=\"", zc, 
+			"\" font-size=\"", font.size[i], "\" text-anchor=\"", text.anchor[i], 
+			"\" font-family=\"", font.family[i], "\" opacity=\"", opacity[i], 
+			"\" font-weight=\"", font.weight[i], "\" letter-spacing=\"", letter.spacing[i], 
+			"\" fill=\"", col[i], "\" writing-mode=\"", writing.mode[i], 
+			"\" glyph-orientation-vertical=\"", glyph.orientation.vertical[i], 
+			"\" >", labels[i], "</text>", sep="")
 	}
 
 	# REMOVE SCIENTIFIC NOTATION

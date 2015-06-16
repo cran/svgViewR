@@ -3,8 +3,8 @@
 \title{Write lines to SVG Viewer}
 \description{A function taking coordinates given in various ways and joining the corresponding points with line segments in an SVG Viewer.}
 \usage{
-svgviewr.lines(x, file=NULL, y=NULL, col=NULL, z.index=0, layer="", 
-               label="", lwd=1, opacity=1, animate=TRUE, append=TRUE)
+svgviewr.lines(x, file=NULL, y=NULL, col="black", z.index=0, layer="", 
+               label="", lwd=1, opacity=1, append=TRUE)
 }
 \arguments{
   \item{x}{A vector, matrix or array of 2D or 3D coordinates to be joined by a line or lines.}
@@ -16,7 +16,6 @@ svgviewr.lines(x, file=NULL, y=NULL, col=NULL, z.index=0, layer="",
   \item{label}{A label to be added to the SVG object in SVG tag.}
   \item{lwd}{The thickness of the line(s).}
   \item{opacity}{A number between \code{0} and \code{1} indicating the opacity of the line(s).}
-  \item{animate}{If \code{x} is an array, a logical indicating whether the lines should be animated.}
   \item{append}{A logical indicating whether the lines should be appended to existing SVG objects in \code{file}. If \code{FALSE}, previously existing objects should be overwritten.}
 }
 \details{
@@ -34,28 +33,7 @@ The graphical parameters \code{col}, \code{z.index}, \code{layer}, \code{label},
 \code{\link{svgviewr.pathsC}}
 }
 \examples{
-### PLOT A SERIES OF 3D TRIANGLES ###
-## SET FILE PATH (REPLACE NULL) TO WHERE VIEWER SHOULD BE SAVED
-## EXAMPLE: file <- "/Users/aaron/Desktop/svgViewR.html"
-file <- NULL
-
-## CREATE NEW SVG VIEWER
-svgviewr.new(file=file, window.title="3D Triangles")
-
-## CREATE A SERIES OF 20 TRIANGLES (3D)
-n <- 20
-x_seq <- seq(0, 1, length=n)
-x_pts <- matrix(c(0,0,0, 0,0,1, 1,0,0, 0,0,0), nrow=4, ncol=3, byrow=TRUE)
-x <- array(NA, dim=c(4, 3, n))
-for(i in 1:dim(x)[3]) x[, , i] <- x_pts + matrix(x_seq[i], nrow=4, ncol=3)
-
-## ADD LINES TO SVG VIEWER
-svgviewr.lines(x, file=file, opacity=0.5, col=c("blue", "green", "red"), lwd=2, animate=FALSE)
-
-## OPEN THE SPECIFIED FILE IN A WEB BROWSER TO VIEW TRIANGLES
-
-
-### PLOT A SERIES OF ANIMATED 3D TRIANGLES ###
+### PLOT MOVING TRIANGLES ###
 ## SET FILE PATH (REPLACE NULL) TO WHERE VIEWER SHOULD BE SAVED
 ## EXAMPLE: file <- "/Users/aaron/Desktop/svgViewR.html"
 file <- NULL
@@ -63,7 +41,7 @@ file <- NULL
 ## CREATE NEW SVG VIEWER
 svgviewr.new(file=file, window.title="3D Animated Triangles")
 
-## CREATE A SERIES OF 20 TRIANGLES (3D)
+## MOVE A TRIANGLE, 50 ITERATIONS
 n <- 50
 x_seq <- seq(0, 1, length=n)
 x_pts <- matrix(c(0,0,0, 0,0,1, 1,0,0, 0,0,0), nrow=4, ncol=3, byrow=TRUE)
@@ -71,7 +49,7 @@ x <- array(NA, dim=c(4, 3, n))
 for(i in 1:dim(x)[3]) x[, , i] <- x_pts + matrix(x_seq[i], nrow=4, ncol=3)
 
 ## ADD LINES TO SVG VIEWER
-svgviewr.lines(x, file=file, opacity=0.5, col="blue", lwd=2, animate=TRUE)
+svgviewr.lines(x, file=file, opacity=0.5, col="blue", lwd=2)
 
 ## OPEN THE SPECIFIED FILE IN A WEB BROWSER TO VIEW TRIANGLES
 
@@ -82,7 +60,7 @@ svgviewr.lines(x, file=file, opacity=0.5, col="blue", lwd=2, animate=TRUE)
 file <- NULL
 
 ## CREATE NEW SVG VIEWER
-svgviewr.new(file=file, window.title="3D Animated Polynomials")
+svgviewr.new(file=file, window.title="3D Animated Polynomials", animate.reverse=FALSE)
 
 ## CREATE ARRAY OF COORDINATES
 n <- 40
@@ -92,7 +70,7 @@ n_seq <- seq(1, 10, length=n)
 for(i in 1:dim(x)[3]) x[, , i] <- cbind(x_seq, x_seq^n_seq[i])
 
 ## ADD LINES TO SVG VIEWER
-svgviewr.lines(x=x, file=file, opacity=1, col="blue", lwd=2, z.index=-1, animate=TRUE)
+svgviewr.lines(x=x, file=file, opacity=1, col="blue", lwd=2, z.index=-1)
 
 ## OPEN THE SPECIFIED FILE IN A WEB BROWSER TO VIEW
 

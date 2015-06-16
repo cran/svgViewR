@@ -1,7 +1,7 @@
-svgviewr.new <- function(file, window.title="SVG Viewer", animate.duration = 1, animate.reverse = FALSE, animate.repeat = -1){
+svgviewr.new <- function(file, window.title="SVG Viewer", animate.duration = 1, 
+	animate.reverse = FALSE, animate.repeat = -1, fdir = NULL){
 
 	# CHECK THAT FILE IS OF TYPE HTML
-	
 
 	if(is.null(file)) return(0)
 
@@ -11,16 +11,7 @@ svgviewr.new <- function(file, window.title="SVG Viewer", animate.duration = 1, 
 	n <- c(n, paste("<title>", window.title,"</title>", sep=""))
 	n <- c(n, "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" >\n")
 	
-	#if(is.null(js_files_folder)) js_files_folder <- '../js_files'
-	#n <- c(n, paste("<script src=\"", js_files_folder, "/svg_viewer_n.js\" type=\"text/javascript\" ></script>", sep=""))
-	#n <- c(n, paste("<script src=\"", js_files_folder, "/svg_viewer_", '3d',"_n.js\" type=\"text/javascript\" ></script>", sep=""))
-	#n <- c(n, paste("<script src=\"", js_files_folder, "/ui_functions.js\" type=\"text/javascript\" ></script>\n", sep=""))
-	
-	fdir <- paste0(path.package("svgViewR"), "/extdata/")
-	#if("package:svgViewR" %in% search()){
-	#}else{
-	#	fdir <- '/Applications/XAMPP/xamppfiles/htdocs/data_analysis/r_package_development/svgViewR/inst/extdata/'
-	#}	
+	if(is.null(fdir)) fdir <- paste0(path.package("svgViewR"), "/extdata/")
 
 	n <- c(n, "<svg_doc xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style=\"visibility:hidden;\" >")
 	n <- c(n, "</svg_doc>\n")
@@ -37,7 +28,7 @@ svgviewr.new <- function(file, window.title="SVG Viewer", animate.duration = 1, 
 	n <- c(n, "\tvar svgDocument = document.getElementById(\"world\");")
 	n <- c(n, "</script>\n")
 
-	n <- c(n, "<script /svg_viewer_n.js\" type=\"text/javascript\" >\n")
+	n <- c(n, "<script type=\"text/javascript\" >\n")
 
 	# DURATION OF ANIMATION INCLUDING REVERSE (IF SELECTED) IN SECONDS
 	#	DEPENDING ON NUMBER OF SHAPES, SVG CANNOT EXCEED CERTAIN DURATION
@@ -48,9 +39,11 @@ svgviewr.new <- function(file, window.title="SVG Viewer", animate.duration = 1, 
 	n <- c(n, paste0("\tvar animation_count = ", 0, ";"))
 	n <- c(n, "")
 
-	n <- c(n, paste("\t", paste(readLines(paste0(fdir, "svg_viewer_3d_n.js")), collapse="\n\t"), "\n</script>", sep=""))
-	n <- c(n, paste("<script /svg_viewer_n.js\" type=\"text/javascript\" >\n\t", paste(readLines(paste0(fdir, "svg_viewer_n.js")), collapse="\n\t"), "\n</script>", sep=""))
-	n <- c(n, paste("<script /svg_viewer_n.js\" type=\"text/javascript\" >\n\t", paste(readLines(paste0(fdir, "ui_functions.js")), collapse="\n\t"), "\n</script>", sep=""))
+	n <- c(n, paste("\t", paste(readLines(paste0(fdir, "math.js")), collapse="\n\t"), "\n</script>", sep=""))
+	n <- c(n, paste("<script type=\"text/javascript\" >\n\t", paste(readLines(paste0(fdir, "ui_functions.js")), collapse="\n\t"), "\n</script>", sep=""))
+	n <- c(n, paste("<script type=\"text/javascript\" >\n\t", paste(readLines(paste0(fdir, "shape_operations.js")), collapse="\n\t"), "\n</script>", sep=""))
+	n <- c(n, paste("<script type=\"text/javascript\" >\n\t", paste(readLines(paste0(fdir, "shapes.js")), collapse="\n\t"), "\n</script>", sep=""))
+	n <- c(n, paste("<script type=\"text/javascript\" >\n\t", paste(readLines(paste0(fdir, "control_panel.js")), collapse="\n\t"), "\n</script>", sep=""))
 
 	write(n, file)
 	

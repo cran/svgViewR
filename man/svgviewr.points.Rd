@@ -5,8 +5,8 @@
 \usage{
 svgviewr.points(x, file=NULL, y=NULL, type="p", col=NULL, col.fill="black",
                col.stroke="black", z.index=0, layer="", label="", cex=2,
-               lwd=2, opacity.stroke=1, opacity.fill=1, animate=TRUE, 
-               append=TRUE)
+               lwd=2, opacity.stroke=1, opacity.fill=1, animate=NULL, 
+               append=TRUE, tag.name="point")
 }
 \arguments{
   \item{x}{A vector, matrix or array of 2D or 3D coordinates.}
@@ -23,13 +23,18 @@ svgviewr.points(x, file=NULL, y=NULL, type="p", col=NULL, col.fill="black",
   \item{lwd}{The thickness of the border of the point(s).}
   \item{opacity.stroke}{A number between \code{0} and \code{1} indicating the opacity of the border of the point(s).}
   \item{opacity.fill}{A number between \code{0} and \code{1} indicating the opacity of the fill of the point(s).}
-  \item{animate}{If \code{x} is an array, a logical indicating whether the lines should be animated.}
+  \item{animate}{This argument is deprecated with svgViewR 1.0.1 and greater. Instead, whether the points are animated is determined by whether the points are a matrix or an array.}
   \item{append}{A logical indicating whether the lines should be appended to existing SVG objects in \code{file}. If \code{FALSE}, previously existing objects should be overwritten.}
+  \item{tag.name}{The tag to be used in writing the shape to the html file (internal use only).}
 }
 \details{
-This function accepts input similar to the native plot function \code{points()}. If \code{x} and \code{y} are vectors, they are combined into a matrix using \code{cbind()}. If \code{x} is a matrix, this matrix is used directly. Each row of the matrix is drawn as a point. If \code{x} is an array, the array is interpreted as a series of matrices, each representing a state of the point or point(s) in an animation of length \code{dim(x)[3]}. Each of the \code{dim(x)[3]} matrices is used to draw each state in a manner identical to when \code{x} is a matrix. If \code{animate} is \code{TRUE}, each state of points will be drawn as an animation. If \code{animate} is \code{FALSE}, all states will be drawn superimposed on one another in a single, still graphic.
+This function accepts input similar to the native plot function \code{points()}. If \code{x} and \code{y} are vectors, they are combined into a matrix using \code{cbind()}. If \code{x} is a vector or matrix, the vector or matrix is used directly. A vector draws a single point while each row of the matrix is drawn as a separate point. If \code{x} is an array, the array is interpreted as a series of matrices, each representing a state of the point or point(s) in an animation of length \code{dim(x)[3]}.
 
-The graphical parameters \code{col}, \code{col.fill}, \code{col.stroke}, \code{z.index}, \code{layer}, \code{label}, \code{lwd}, \code{opacity.stroke} and \code{opacity.fill} can all be vectors of length one or of the same length as the number of lines to be drawn. This allows different parameters to be specified for each point. This does not extend to the animation states; that is, each point will retain the same properties throughout the animation.
+The graphical parameters (\code{col}, \code{col.fill}, \code{col.stroke}, \code{lwd}, \code{opacity.stroke} and \code{opacity.fill}) are interpreted differently depending on the input points. If the input points are a vector (single point) and the graphical parameters are of length one, the parameters will be used to draw that point. If the input points are a vector (single point) and any of the graphical parameters are of length greater than one, the graphical parameter will be interpreted as an animated state of the point (e.g. a stationary point that changes color). Any of the previously listed graphical parameters can be animated.
+
+If input points are a matrix (multiple points, not animated) and a graphical parameter is a vector, the parameter will be interpreted in the same way as in the standard R plotting: the graphical parameter will not be animated and will be applied to the points in order (and recycled if not of the same length).
+
+If the input points are an array (one or more points, animated) and a graphical parameter is a vector of less elements than the number of elements in the first dimension of the point array, the parameter will not be animated. If the number of elements in the graphical parameter exceeds the number of elements in the first dimension of the point array, the parameter will be animated with the points (e.g. a moving point that is also changing color).
 }
 \value{If file is non-\code{NULL}, 1 if write was successful. If file is \code{NULL}, a vector SVG point elements.}
 \author{Aaron Olsen}
@@ -39,6 +44,21 @@ The graphical parameters \code{col}, \code{col.fill}, \code{col.stroke}, \code{z
 \code{\link{svgviewr.pathsC}}
 }
 \examples{
+### CREATE A POINT WITH ANIMATED FILL COLOR ###
+## SET FILE PATH (REPLACE NULL) TO WHERE VIEWER SHOULD BE SAVED
+## EXAMPLE: file <- "/Users/aaron/Desktop/svgViewR.html"
+file <- NULL
+
+## CREATE NEW SVG VIEWER
+svgviewr.new(file=file, window.title="RGB flashing point", animate.duration=2)
+	
+# CREATE A POINT WITH ANIMATED FILL COLOR
+svg_points <- svgviewr.points(x=c(0,0,0), cex=10, lwd=1, col=c("red", "green", "blue"), file=file)
+
+## OPEN THE SPECIFIED FILE IN A WEB BROWSER TO VIEW
+
+
+
 ### CREATE A MOVING SINUSOIDAL PATH ###
 ## SET FILE PATH (REPLACE NULL) TO WHERE VIEWER SHOULD BE SAVED
 ## EXAMPLE: file <- "/Users/aaron/Desktop/svgViewR.html"
@@ -55,7 +75,7 @@ n_seq <- seq(0, 2*pi, length=n)
 for(i in 1:dim(x)[3]) x[, , i] <- cbind(x_seq, sin(x_seq + n_seq[i]))
 	
 # ADD POINTS TO SVG VIEWER
-svg_points <- svgviewr.points(x, cex=2, lwd=1, col="blue", file=file, animate=TRUE)
+svg_points <- svgviewr.points(x, cex=2, lwd=1, col="blue", file=file)
 
 ## OPEN THE SPECIFIED FILE IN A WEB BROWSER TO VIEW
 
@@ -77,7 +97,7 @@ n_seq <- seq(1, 10, length=n)
 for(i in 1:dim(x)[3]) x[, , i] <- cbind(x_seq, x_seq^n_seq[i])
 
 ## ADD POINTS TO SVG VIEWER
-svgviewr.points(x, cex=2, lwd=1, col="blue", file=file, animate=TRUE)
+svgviewr.points(x, cex=2, lwd=1, col="blue", file=file)
 
 ## OPEN THE SPECIFIED FILE IN A WEB BROWSER TO VIEW
 
