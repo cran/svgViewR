@@ -55,7 +55,7 @@ svgviewr.text <- function(x, file = NULL, y = NULL, labels = NULL, layer="",
 		zc <- paste(x[i, 3, ], collapse=",")
 
 		# CHECK THAT POINTS CHANGE POSITION BEFORE PRINTING ANIMATION STRING
-		sum_sd <- sum(apply(matrix(x[i, , ], ncol=3, byrow=T), 2, sd))
+		sum_sd <- sum(abs(diff(x[i, 1, ]))) + sum(abs(diff(x[i, 2, ]))) + sum(abs(diff(x[i, 3, ])))
 		if(!is.na(sum_sd) && sum_sd == 0){
 			xc <- x[i, 1, 1]
 			yc <- x[i, 2, 1]
@@ -67,13 +67,16 @@ svgviewr.text <- function(x, file = NULL, y = NULL, labels = NULL, layer="",
 			"\" font-size=\"", font.size[i], "\" text-anchor=\"", text.anchor[i], 
 			"\" font-family=\"", font.family[i], "\" opacity=\"", opacity[i], 
 			"\" font-weight=\"", font.weight[i], "\" letter-spacing=\"", letter.spacing[i], 
-			"\" fill=\"", col[i], "\" writing-mode=\"", writing.mode[i], 
+			"\" fill=\"", webColor(col[i]), "\" writing-mode=\"", writing.mode[i], 
 			"\" glyph-orientation-vertical=\"", glyph.orientation.vertical[i], 
 			"\" >", labels[i], "</text>", sep="")
 	}
 
 	# REMOVE SCIENTIFIC NOTATION
 	options(scipen=0)
+
+	# REMOVE NA LINES
+	new_lines <- new_lines[!is.na(new_lines)]
 
 	# IF FILE IS NULL, RETURN LINES OF SVG OBJECTS
 	if(is.null(file)) return(new_lines)

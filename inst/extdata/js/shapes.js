@@ -45,6 +45,39 @@ function lineProject(x1, y1, x2, y2) {
 	this.y2 = y2;
 }
 
+function arrow(x1, y1, z1, x2, y2, z2, l, a) {
+	this.x1 = x1;
+	this.y1 = y1;
+	this.z1 = z1;
+	this.x2 = x2;
+	this.y2 = y2;
+	this.z2 = z2;
+	this.l = l;
+	this.a = a;
+}
+
+function arrowAnimate(x1, y1, z1, x2, y2, z2, l, a) {
+	this.x1 = x1;
+	this.y1 = y1;
+	this.z1 = z1;
+	this.x2 = x2;
+	this.y2 = y2;
+	this.z2 = z2;
+	this.l = l;
+	this.a = a;
+}
+
+function arrowProject(x1, y1, x2, y2, hax, hay, hbx, hby) {
+	this.x1 = x1;
+	this.y1 = y1;
+	this.x2 = x2;
+	this.y2 = y2;
+	this.hax = hax;
+	this.hay = hay;
+	this.hbx = hbx;
+	this.hby = hby;
+}
+
 function path(x, y, z, d, close) {
 	this.x = x;
 	this.y = y;
@@ -78,6 +111,27 @@ function pointProject(x, y) {
 	this.y = y;
 }
 
+function text(x, y, z, s) {
+	this.x = x;
+	this.y = y;
+	this.z = z;
+	this.s = s;
+}
+
+function textAnimate(x, y, z, s, i) {
+	this.x = x;
+	this.y = y;
+	this.z = z;
+	this.s = s;
+	this.i = i;
+}
+
+function textProject(x, y, s) {
+	this.x = x;
+	this.y = y;
+	this.s = s;
+}
+
 function ZOrder(z, i, type){
 	this.z = z;
 	this.i = i;
@@ -91,6 +145,22 @@ function Layer(layer, i, type){
 }
 
 //*************************** Shape attribute constructors *****************************//
+
+function imageAttributes(src, preserveAspectRatio, opacity, z_index, animate) {
+	this.src = src;
+	this.preserveAspectRatio = preserveAspectRatio;
+	this.opacity = opacity;
+	this.z_index = z_index;
+	this.animate = animate;
+}
+
+function imageAttributesAnimate(i, src, preserveAspectRatio, opacity, z_index) {
+	this.i = i;
+	this.src = src;
+	this.preserveAspectRatio = preserveAspectRatio;
+	this.opacity = opacity;
+	this.z_index = z_index;
+}
 
 function shapeAttributes(fill, fill_opacity, stroke, stroke_opacity, stroke_width, r, z_index, animate) {
 	this.fill = fill;
@@ -114,10 +184,9 @@ function shapeAttributesAnimate(i, fill, fill_opacity, stroke, stroke_opacity, s
 	this.z_index = z_index;
 }
 
-function textAttributes(text, text_anchor, font_size, fill, opacity, font_family, font_style, font_weight, letter_spacing, writing_mode, glyph_orientation_vertical, z_index, animate) {
+function textAttributes(text, text_anchor, fill, opacity, font_family, font_style, font_weight, letter_spacing, writing_mode, glyph_orientation_vertical, z_index, animate) {
 	this.text = text;
 	this.text_anchor = text_anchor;
-	this.font_size = font_size;
 	this.fill = fill;
 	this.opacity = opacity;
 	this.font_family = font_family;
@@ -130,10 +199,9 @@ function textAttributes(text, text_anchor, font_size, fill, opacity, font_family
 	this.animate = animate;
 }
 
-function textAttributesAnimate(i, text_anchor, font_size, fill, opacity, font_family, font_style, font_weight, letter_spacing, writing_mode, glyph_orientation_vertical, z_index) {
+function textAttributesAnimate(i, text_anchor, fill, opacity, font_family, font_style, font_weight, letter_spacing, writing_mode, glyph_orientation_vertical, z_index) {
 	this.i = i;
 	this.text_anchor = text_anchor;
-	this.font_size = font_size;
 	this.fill = fill;
 	this.opacity = opacity;
 	this.font_family = font_family;
@@ -234,6 +302,84 @@ line.prototype = {
     limits: function () {return {x:[this.x1, this.x2], y:[this.y1, this.y2], z:[this.z1, this.z2]}}
 }
 
+arrow.prototype = {
+    scale: function (s) {
+		this.x1 *= s;
+		this.y1 *= s;
+		this.z1 *= s;
+		this.x2 *= s;
+		this.y2 *= s;
+		this.z2 *= s;
+		this.l *= s;
+    },
+
+    rotateXaxis: function (t) {
+		var tmp = this.y1;
+		this.y1 = (t.cos * this.y1) - (t.sin * this.z1);
+		this.z1 = (t.sin * tmp) + (t.cos * this.z1);
+		var tmp = this.y2;
+		this.y2 = (t.cos * this.y2) - (t.sin * this.z2);
+		this.z2 = (t.sin * tmp) + (t.cos * this.z2);
+    },
+    rotateYaxis: function (t) {
+		var tmp = this.x1;
+		this.x1 = (t.cos * this.x1) + (t.sin * this.z1);
+		this.z1 = - (t.sin * tmp) + (t.cos * this.z1);
+		var tmp = this.x2;
+		this.x2 = (t.cos * this.x2) + (t.sin * this.z2);
+		this.z2 = - (t.sin * tmp) + (t.cos * this.z2);
+    },
+    rotateZaxis: function (t) {
+		var tmp = this.x1;
+		this.x1 = (t.cos * this.x1) - (t.sin * this.y1);
+		this.y1 = (t.sin * tmp) + (t.cos * this.y1);
+		var tmp = this.x2;
+		this.x2 = (t.cos * this.x2) - (t.sin * this.y2);
+		this.y2 = (t.sin * tmp) + (t.cos * this.y2);
+    },
+
+    translateX: function (d) {this.x1 += d;this.x2 += d;},
+    translateY: function (d) {this.y1 += d;this.y2 += d;},
+    translateZ: function (d) {this.z1 += d;this.z2 += d;},
+
+    translate: function (dx, dy, dz) {
+		this.x1 += dx;
+		this.y1 += dy;
+		this.z1 += dz;
+		this.x2 += dx;
+		this.y2 += dy;
+		this.z2 += dz;
+    },
+
+    project: function (d, e, xs, ys) {
+
+		var u1 = -(d - e) / (this.z1 - e);
+		var u2 = -(d - e) / (this.z2 - e);
+		var v21 = [this.x2-this.x1,this.y2-this.y1,this.z2-this.z1];
+		var v12 = [this.x1-this.x2,this.y1-this.y2,this.z1-this.z2];
+		var v12u = uvector(v12);
+		var c_prod1 = uvector(cprod(v21, [0,0,1]));
+		var c_prod2 = uvector(cprod(v21, [c_prod1[0],c_prod1[1],c_prod1[2]]));
+		if(c_prod2[0] == 0 && c_prod2[1] == 0 && c_prod2[2] == 0) c_prod2 = [0,1,0];
+		if(Math.abs(c_prod2[0]) > 0.98) c_prod2 = [0,1,0];
+		var rm1 = tMatrixEP(c_prod2, this.a);
+		var rm2 = tMatrixEP(c_prod2, -this.a);
+
+		// Adjust arrowhead length so that it is longer when z-component is higher (or else front on view hides most of arrowhead)
+		var ahl = this.l+(Math.pow(Math.abs(v12u[2]),10)/1)*0.6*this.l -(Math.abs(v12u[0]*v12u[1])/0.5)*0.2*this.l
+		
+		var ha = add(multM(multC(v12u, ahl), rm1), [this.x2, this.y2, this.z2]);
+		var hb = add(multM(multC(v12u, ahl), rm2), [this.x2, this.y2, this.z2]);
+		var hau = -(d - e) / (ha[2] - e);
+		var hbu = -(d - e) / (hb[2] - e);
+		
+		return new arrowProject((u1 * this.x1) + xs,-(u1 * this.y1) + ys, (u2 * this.x2) + xs, -(u2 * this.y2) + ys,
+			(hau * ha[0]) + xs, -(hau * ha[1]) + ys, (hbu * hb[0]) + xs, -(hbu * hb[1]) + ys);
+    },
+
+    limits: function () {return {x:[this.x1, this.x2], y:[this.y1, this.y2], z:[this.z1, this.z2]}}
+}
+
 path.prototype = {
  
     scale: function (s) {
@@ -272,9 +418,9 @@ path.prototype = {
 
     limits: function () {
     	return {
-    		x:[Math.min.apply(Math, this.x), Math.max.apply(Math, this.x)], 
-    		y:[Math.min.apply(Math, this.y), Math.max.apply(Math, this.y)], 
-    		z:[Math.min.apply(Math, this.z), Math.max.apply(Math, this.z)]
+    		x:[min.apply(Math, this.x), max.apply(Math, this.x)], 
+    		y:[min.apply(Math, this.y), max.apply(Math, this.y)], 
+    		z:[min.apply(Math, this.z), max.apply(Math, this.z)]
 		};
     }
 }
@@ -308,6 +454,36 @@ point.prototype = {
     limits: function () {return {x:[this.x], y:[this.y], z:[this.z]};}
 }
 
+text.prototype = {
+    scale: function (s) {
+		this.x *= s;
+		this.y *= s;
+		this.z *= s;
+		this.s *= s;
+    },
+
+    rotateXaxis: function (t) {rotateX1(this, t);},
+    rotateYaxis: function (t) {rotateY1(this, t);},
+    rotateZaxis: function (t) {rotateZ1(this, t);},
+
+    translateX: function (d) {this.x += d;},
+    translateY: function (d) {this.y += d;},
+    translateZ: function (d) {this.z += d;},
+
+    translate: function (dx, dy, dz) {
+		this.x += dx;
+		this.y += dy;
+		this.z += dz;
+    },
+
+	project: function (d, e, xs, ys) {
+		var u = -(d - e) / (this.z - e);
+		return new textProject((u * this.x) + xs, -(u * this.y) + ys, this.s);
+	},
+
+    limits: function () {return {x:[this.x], y:[this.y], z:[this.z]};}
+}
+
 circleAnimate.prototype = {
     scale: function (s) {
 		this.x = multC(this.x, s);
@@ -332,9 +508,9 @@ circleAnimate.prototype = {
 
     limits: function () {
     	return {
-    		x:[Math.min.apply(Math, add(this.x, this.r)), Math.min.apply(Math, sub(this.x, this.r)), Math.max.apply(Math, add(this.x, this.r)), Math.max.apply(Math, sub(this.x, this.r))], 
-    		y:[Math.min.apply(Math, add(this.y, this.r)), Math.min.apply(Math, sub(this.y, this.r)), Math.max.apply(Math, add(this.y, this.r)), Math.max.apply(Math, sub(this.y, this.r))], 
-    		z:[Math.min.apply(Math, add(this.z, this.r)), Math.min.apply(Math, sub(this.z, this.r)), Math.max.apply(Math, add(this.z, this.r)), Math.max.apply(Math, sub(this.z, this.r))], 
+    		x:[min.apply(Math, add(this.x, this.r)), min.apply(Math, sub(this.x, this.r)), max.apply(Math, add(this.x, this.r)), max.apply(Math, sub(this.x, this.r))], 
+    		y:[min.apply(Math, add(this.y, this.r)), min.apply(Math, sub(this.y, this.r)), max.apply(Math, add(this.y, this.r)), max.apply(Math, sub(this.y, this.r))], 
+    		z:[min.apply(Math, add(this.z, this.r)), min.apply(Math, sub(this.z, this.r)), max.apply(Math, add(this.z, this.r)), max.apply(Math, sub(this.z, this.r))], 
 		};
     }
 }
@@ -362,9 +538,9 @@ pointAnimate.prototype = {
 
     limits: function () {
     	return {
-    		x:[Math.min.apply(Math, this.x), Math.max.apply(Math, this.x)], 
-    		y:[Math.min.apply(Math, this.y), Math.max.apply(Math, this.y)], 
-    		z:[Math.min.apply(Math, this.z), Math.max.apply(Math, this.z)]
+    		x:[min.apply(Math, this.x), max.apply(Math, this.x)], 
+    		y:[min.apply(Math, this.y), max.apply(Math, this.y)], 
+    		z:[min.apply(Math, this.z), max.apply(Math, this.z)]
 		};
     }
 }
@@ -428,13 +604,109 @@ lineAnimate.prototype = {
 
    limits: function () {
     	return {
-    		x:[Math.min.apply(Math, this.x1), Math.min.apply(Math, this.x2), Math.max.apply(Math, this.x1), Math.max.apply(Math, this.x2)], 
-    		y:[Math.min.apply(Math, this.y1), Math.min.apply(Math, this.y2), Math.max.apply(Math, this.y1), Math.max.apply(Math, this.y2)], 
-    		z:[Math.min.apply(Math, this.z1), Math.min.apply(Math, this.z2), Math.max.apply(Math, this.z1), Math.max.apply(Math, this.z2)]
+    		x:[min.apply(Math, this.x1), min.apply(Math, this.x2), max.apply(Math, this.x1), max.apply(Math, this.x2)], 
+    		y:[min.apply(Math, this.y1), min.apply(Math, this.y2), max.apply(Math, this.y1), max.apply(Math, this.y2)], 
+    		z:[min.apply(Math, this.z1), min.apply(Math, this.z2), max.apply(Math, this.z1), max.apply(Math, this.z2)]
 		};
     }
 }
 
+arrowAnimate.prototype = {
+    scale: function (s) {
+		this.x1 = multC(this.x1, s);
+		this.y1 = multC(this.y1, s);
+		this.z1 = multC(this.z1, s);
+		this.x2 = multC(this.x2, s);
+		this.y2 = multC(this.y2, s);
+		this.z2 = multC(this.z2, s);
+    },
+
+    rotateXaxis: function (t) {
+		var tmp = this.y1;
+		this.y1 = sub(multC(this.y1, t.cos), multC(this.z1, t.sin));
+		this.z1 = add(multC(tmp, t.sin), multC(this.z1, t.cos));
+		var tmp = this.y2;
+		this.y2 = sub(multC(this.y2, t.cos), multC(this.z2, t.sin));
+		this.z2 = add(multC(tmp, t.sin), multC(this.z2, t.cos));
+    },
+    rotateYaxis: function (t) {
+		var tmp = this.x1;
+		this.x1 = add(multC(this.x1, t.cos), multC(this.z1, t.sin));
+		this.z1 = sub(multC(this.z1, t.cos), multC(tmp, t.sin));
+		var tmp = this.x2;
+		this.x2 = add(multC(this.x2, t.cos), multC(this.z2, t.sin));
+		this.z2 = sub(multC(this.z2, t.cos), multC(tmp, t.sin));
+    },
+    rotateZaxis: function (t) {
+		var tmp = this.x1;
+		this.x1 = sub(multC(this.x1, t.cos), multC(this.y1, t.sin));
+		this.y1 = add(multC(tmp, t.sin), multC(this.y1, t.cos));
+		var tmp = this.x2;
+		this.x2 = sub(multC(this.x2, t.cos), multC(this.y2, t.sin));
+		this.y2 = add(multC(tmp, t.sin), multC(this.y2, t.cos));
+    },
+
+    translateX: function (d) {
+    	this.x1 = addC(this.x1, d);
+    	this.x2 = addC(this.x2, d);
+    },
+    translateY: function (d) {
+    	this.y1 = addC(this.y1, d);
+    	this.y2 = addC(this.y2, d);
+    },
+    translateZ: function (d) {
+    	this.z1 = addC(this.z1, d);
+    	this.z2 = addC(this.z2, d);
+    },
+
+    translate: function (dx, dy, dz) {
+		this.x1 = addC(this.x1, dx);
+		this.y1 = addC(this.y1, dy);
+		this.z1 = addC(this.z1, dz);
+		this.x2 = addC(this.x2, dx);
+		this.y2 = addC(this.y2, dy);
+		this.z2 = addC(this.z2, dz);
+    },
+
+   limits: function () {
+    	return {
+    		x:[min.apply(Math, this.x1), min.apply(Math, this.x2), max.apply(Math, this.x1), max.apply(Math, this.x2)], 
+    		y:[min.apply(Math, this.y1), min.apply(Math, this.y2), max.apply(Math, this.y1), max.apply(Math, this.y2)], 
+    		z:[min.apply(Math, this.z1), min.apply(Math, this.z2), max.apply(Math, this.z1), max.apply(Math, this.z2)]
+		};
+    }
+}
+
+textAnimate.prototype = {
+    scale: function (s) {
+		this.x = multC(this.x, s);
+		this.y = multC(this.y, s);
+		this.z = multC(this.z, s);
+		this.s = multC(this.s, s);
+    },
+
+    rotateXaxis: function (t) {rotateX2(this, t);},
+    rotateYaxis: function (t) {rotateY2(this, t);},
+    rotateZaxis: function (t) {rotateZ2(this, t);},
+
+    translateX: function (d) {this.x = addC(this.x, d);},
+    translateY: function (d) {this.y = addC(this.y, d);},
+    translateZ: function (d) {this.z = addC(this.z, d);},
+
+    translate: function (dx, dy, dz) {
+		this.x = addC(this.x, dx);
+		this.y = addC(this.y, dy);
+		this.z = addC(this.z, dz);
+    },
+
+    limits: function () {
+    	return {
+    		x:[min.apply(Math, this.x), max.apply(Math, this.x)], 
+    		y:[min.apply(Math, this.y), max.apply(Math, this.y)], 
+    		z:[min.apply(Math, this.z), max.apply(Math, this.z)]
+		};
+    }
+}
 
 //********************************** Shape functions ***********************************//
 
@@ -526,9 +798,10 @@ function pathToString(path){
 
 function pointsToPath(points, d){
 
-	var str = "", let = "";
+	var i;
+	var str = "", letter = "";
 
-	for (var i = 0, len = d.length; i < len; i++){
+	for (i = 0, len = d.length; i < len; i++){
 		if(i == 0) letter = "M";
 		if(i > 0) letter = "L";
 		str += letter + " " + points[d[i]-1].x + " " + points[d[i]-1].y + " ";
@@ -563,6 +836,8 @@ function translateZ(object, d){for (var i = 0, len = object.length; i < len; i++
 
 function limits(object){
 
+	if(object.length == 0) return {NaN,NaN, NaN,NaN, NaN,NaN}
+
 	var shape_limits;
 	var x = [], y = [], z = [];
 
@@ -580,9 +855,11 @@ function limits(object){
 	y = clean(y, NaN);
 	z = clean(z, NaN);
 	
+	if(x.length == 0) return {NaN,NaN, NaN,NaN, NaN,NaN}
+	
 	return {
-		xmin:Math.min.apply(Math, x), xmax:Math.max.apply(Math, x),
-		ymin:Math.min.apply(Math, y), ymax:Math.max.apply(Math, y),
-		zmin:Math.min.apply(Math, z), zmax:Math.max.apply(Math, z)
+		xmin:min.apply(Math, x), xmax:max.apply(Math, x),
+		ymin:min.apply(Math, y), ymax:max.apply(Math, y),
+		zmin:min.apply(Math, z), zmax:max.apply(Math, z)
 	}
 }

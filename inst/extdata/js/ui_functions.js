@@ -1,4 +1,5 @@
-
+var initialX;
+var initialY;
 function_name = new Array();
 url_path = new Array();
 innerHTML_id = new Array();
@@ -19,6 +20,10 @@ String.prototype.firstToUpperCase = function() {
 Array.prototype.firstToUpperCase = function() {
 	for (var i = 0, len = this.length; i < len; i++) this[i] = this[i].firstToUpperCase();
 	return this;
+}
+
+function about_alert(){
+	alert('svgViewR is a browser-based viewer that allows users to interactively visualize 3D vector graphics and animations. Visualizations can be made in R, using the package svgViewR, and easily distributed as a single HTML file with nearly universal compatibility across browsers and operating systems. This visualization was made using svgViewR version ' + svgviewr_version + '.\n\nsvgViewR was created by Aaron Olsen and is freely available under a GPL-3 license. For more information, please visit:\n\nhttp://cran.r-project.org/web/packages/svgViewR');
 }
 
 function ajax_alert_return(j, xmlHttp_object){
@@ -239,24 +244,26 @@ BrowserDetect.init();
 
 function clean(array, deleteValue){
 
+	var array_clean = new Array();
+
 	if(deleteValue == undefined) var deleteValue = '';
 
+	var j = 0;
 	for(var i = 0; i < array.length; i++) {
-		if(array[i] == deleteValue){
-			array.splice(i, 1);
-			i--;
-			continue;
-		}
-		if(isNaN(deleteValue) && isNaN(array[i])){
-			array.splice(i, 1);
-			i--;
-			continue;
-		}
+
+		if(array[i] == deleteValue) continue;
+		if(isNaN(deleteValue) && isNaN(array[i])) continue;
+
+		array_clean[j] = array[i];
+
+		j++;
 	}
-	return array;
+
+	return array_clean;
 }
 
 function createCookie(name, value, sec){
+
 	if (sec) {
 		var date = new Date();
 		date.setTime(date.getTime()+(sec*1000));
@@ -357,7 +364,6 @@ function doEvent(){
 //	alert(t2 - t1)
 
 	if (currentEvent == "playPauseAnimation"){
-		if(stop_anim == 1){stop_anim = 0;}else{stop_anim = 1;}
 		playPauseAnimation();
 	}
 }
@@ -509,6 +515,19 @@ function is_numeric(strString){
 	return blnResult;
 }
 
+function listCookies(){
+
+    var all_cookies = document.cookie.split(';');
+    var cookies = new Array();
+
+    for (var i = 0; i < all_cookies.length; i++) {
+		var cookie_split = all_cookies[i].split('=');
+		cookies[i] = {name : cookie_split[0], value : cookie_split[1]};
+    }
+
+    return cookies;
+}
+
 function mouseDownEvent(e){
 
 	e.preventDefault();
@@ -549,10 +568,6 @@ function parse_style_string(string){
 	}
 
 	return style_array; 
-}
-
-function pixel_to_font_size(pixel_height){
-	return pixel_height*1.43;
 }
 
 function scrollEvent(e){

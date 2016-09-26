@@ -20,10 +20,14 @@ svgviewr.paths <- function(d, file=NULL, col=NULL, col.fill="black", col.stroke=
 	# WRITE LINES TO SVG STRUCTURE
 	for(i in 1:length(d)){
 		new_lines <- c(new_lines, paste("\t<path z-index=\"", z.index[i], "\" layer=\"", layer[i], 
-			"\" d=\"", d[[i]], "\" label=\"", label[i], "\" stroke=\"", col.stroke[i], "\" stroke-width=\"", lwd[i], 
-			"\" fill=\"", col.fill[i], "\" stroke-opacity=\"", opacity.stroke[i], 
-			"\" fill-opacity=\"", opacity.fill[i], "\" />", sep=""))
+			"\" d=\"", d[[i]], "\" label=\"", label[i], "\" stroke=\"", webColor(col.stroke[i]), 
+			"\" stroke-width=\"", lwd[i], "\" fill=\"", webColor(col.fill[i]), 
+			"\" stroke-opacity=\"", opacity.stroke[i], "\" fill-opacity=\"", opacity.fill[i], 
+			"\" ></path>", sep=""))
 	}
+
+	# REMOVE NA LINES
+	new_lines <- new_lines[!is.na(new_lines)]
 
 	# IF FILE IS NULL, RETURN LINES OF SVG OBJECTS
 	if(is.null(file)) return(new_lines)

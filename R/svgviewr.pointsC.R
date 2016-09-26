@@ -1,7 +1,8 @@
-svgviewr.pointsC <- function(x, file=NULL, y=NULL, type="p", col=NULL, col.fill="black", 
-	col.stroke="black", z.index=0, layer="", label="", cex=2, lwd=2, opacity.stroke=1, 
-	opacity.fill=1, col.fill.C="none", col.stroke.C="black", z.index.C=0, lwd.C=1, 
-	opacity.stroke.C=1, opacity.fill.C=1, layer.C=NULL, append=TRUE, tag.name="point"){
+svgviewr.pointsC <- function(x, file=NULL, y=NULL, type="p", close=FALSE, 
+	col=NULL, col.fill="black", col.stroke="black", z.index=0, layer="", label="", cex=2, 
+	lwd=2, opacity.stroke=1, opacity.fill=1, col.fill.C="none", col.stroke.C="black", 
+	z.index.C=0, lwd.C=1, opacity.stroke.C=1, opacity.fill.C=1, layer.C=NULL, append=TRUE, 
+	tag.name="point"){
 
 	# IF Y IS NON-NULL, ADD AS SECOND COLUMN TO X
 	if(!is.null(y)) x <- cbind(x, y)
@@ -33,7 +34,7 @@ svgviewr.pointsC <- function(x, file=NULL, y=NULL, type="p", col=NULL, col.fill=
 	}
 
 	# IF COL IS SPECIFIED, OVERWRITE FILL AND STROKE
-	if(!is.null(col)){col.fill <- col;col.stroke <- col}
+	if(!is.null(col)){col.fill <- col;col.stroke <- col;col.fill.C <- col;col.stroke.C <- col}
 
 	# SET GRAPHICAL PARAMETERS
 	if(is.null(layer.C)) layer.C <- layer
@@ -63,7 +64,8 @@ svgviewr.pointsC <- function(x, file=NULL, y=NULL, type="p", col=NULL, col.fill=
 		zc <- paste(x[i, 3, ], collapse=",")
 
 		# CHECK THAT POINTS CHANGE POSITION BEFORE PRINTING ANIMATION STRING
-		sum_sd <- sum(apply(matrix(x[i, , ], ncol=3, byrow=T), 2, sd))
+		sum_sd <- sum(abs(diff(x[i, 1, ]))) + sum(abs(diff(x[i, 2, ]))) + sum(abs(diff(x[i, 3, ])))
+		#sum_sd <- 1
 		if(!is.na(sum_sd) && sum_sd == 0){
 			xc <- x[i, 1, 1]
 			yc <- x[i, 2, 1]
@@ -80,23 +82,43 @@ svgviewr.pointsC <- function(x, file=NULL, y=NULL, type="p", col=NULL, col.fill=
 	}
 	
 	# WRITE LINES TO SVG
-	num_points <- 0
+	num_points <- 1
 	if(!is.null(file)){
 
+		# READ FILE
+		if(class(file)[1] == 'character'){
+			file_read <- readChar(file, file.info(file)$size)
+		}else{
+
+			# Read lines - readChar requires number of characters to read and I could not figure out how to do that with a connection
+			file_read <- paste(readLines(file$con, n=-1), collapse='')
+			
+			# readLines leaves internal current position of connection at the end - reset to beginning
+			seek(file$con, 0, rw = "r")
+		}
+		
 		# COUNT THE NUMBER OF POINT TAGS ALREADY IN THE SVG FILE
-		file_read <- readChar(file, file.info(file)$size)
 		str_split <- strsplit(file_read, "<point ")[[1]]
 		num_points <- length(str_split) - 1
 	}
 	
+	# CREATE VECTOR OF INDICES CONNECTING POINTS
+	connect_indices <- 1:dim(x)[1] + num_points
+	
+	# IF CLOSING CONNECTING PATHS
+	if(close) connect_indices <- c(connect_indices, connect_indices[1])
+
 	# STRING OF POINTS TO CONNECT
-	new_lines[length(new_lines)+1] <- paste("\t<pathC z-index=\"", z.index.C, "\" layer=\"", layer.C, 
-		"\" d=\"", paste(1:dim(x)[1] + num_points, collapse=","), "\" stroke=\"", col.stroke.C, 
-		"\" stroke-width=\"", lwd.C, "\" fill=\"", col.fill.C, "\" fill-opacity=\"", opacity.fill.C, 
-		"\" stroke-opacity=\"", opacity.stroke.C, "\" />", sep="")
+	new_lines[length(new_lines)+1] <- paste("\t<pathC z-index=\"", z.index.C[1], "\" layer=\"", layer.C[1], 
+		"\" d=\"", paste(connect_indices, collapse=","), "\" stroke=\"", webColor(col.stroke.C[1]), 
+		"\" stroke-width=\"", lwd.C[1], "\" fill=\"", webColor(col.fill.C[1]), "\" fill-opacity=\"", opacity.fill.C[1], 
+		"\" stroke-opacity=\"", opacity.stroke.C[1], "\" ></pathC>", sep="")
 
 	# REMOVE SCIENTIFIC NOTATION
 	options(scipen=0)
+
+	# REMOVE NA LINES
+	new_lines <- new_lines[!is.na(new_lines)]
 
 	# IF FILE IS NULL, RETURN LINES OF SVG OBJECTS
 	if(is.null(file)) return(new_lines)

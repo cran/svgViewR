@@ -1,5 +1,6 @@
 svgviewr.lines <- function(x, file=NULL, y=NULL, col="black", z.index=0, layer="", 
-	label="", lwd=1, opacity=1, append=TRUE){
+	label="", lwd=1, opacity=1, arrow.len = NULL, arrow.angle = NULL, append=TRUE, 
+	tag.name="line"){
 
 	# IF X OR Y ARE VECTOR, MAKE SINGLE COLUMN MATRIX
 	if(is.vector(x)) x <- matrix(x, ncol=1)
@@ -32,7 +33,7 @@ svgviewr.lines <- function(x, file=NULL, y=NULL, col="black", z.index=0, layer="
 	}
 
 	# SET GRAPHICAL PARAMETERS
-	svg_gp <- c("col", "label", "layer", "opacity", "lwd", "z.index")
+	svg_gp <- c("col", "label", "layer", "arrow.len", "arrow.angle", "opacity", "lwd", "z.index")
 
 	# CONVERT GRAPHICAL PARAMETERS TO VECTORS WITH SAME NUMBER OF ELEMENTS OF FIRST X DIMENSION
 	for(gpar in svg_gp){
@@ -58,13 +59,26 @@ svgviewr.lines <- function(x, file=NULL, y=NULL, col="black", z.index=0, layer="
 		#sum_sd0 <- sum(apply(matrix(x[i, , ], ncol=3, byrow=T), 2, sd))
 		#sum_sd1 <- sum(apply(matrix(x[i+1, , ], ncol=3, byrow=T), 2, sd))
 		#if(is.na(sum_sd0) || is.na(sum_sd1) || sum_sd0 > 0 || sum_sd1 > 0){
+		
+		# ADD ARROW HEAD PARAMETERS, IF SPECIFIED
+		arrow_len_param <- ''
+		arrow_angle_param <- ''
+		tag_name <- 'line'
+		
+		if(i == (dim(x)[1]-1) && tag.name == 'arrow') tag_name <- 'arrow'
+		if(i == (dim(x)[1]-1) && !is.null(arrow.len)) arrow_len_param <- paste0(" l=\"", arrow.len[i], "\" ")
+		if(i == (dim(x)[1]-1) && !is.null(arrow.len)) arrow_angle_param <- paste0(" a=\"", arrow.angle[i], "\" ")
 
-		new_lines <- c(new_lines, paste("\t<line z-index=\"", z.index[i], "\" layer=\"", layer[i], 
+		new_lines <- c(new_lines, paste("\t<", tag_name," z-index=\"", z.index[i], "\" layer=\"", layer[i], 
 			"\" x1=\"", x1c, "\" y1=\"", y1c, "\" z1=\"", z1c, 
-			"\" x2=\"", x2c, "\" y2=\"", y2c, "\" z2=\"", z2c, 
-			"\" label=\"", label[i], "\" stroke=\"", col[i], "\" stroke-width=\"", lwd[i], 
-			"\" stroke-opacity=\"", opacity[i], "\" />", sep=""))
+			"\" x2=\"", x2c, "\" y2=\"", y2c, "\" z2=\"", z2c, "\"", 
+			arrow_len_param, arrow_angle_param, 
+			" label=\"", label[i], "\" stroke=\"", webColor(col[i]), "\" stroke-width=\"", lwd[i], 
+			"\" stroke-opacity=\"", opacity[i], "\" ></", tag_name, ">", sep=""))
 	}
+
+	# REMOVE NA LINES
+	new_lines <- new_lines[!is.na(new_lines)]
 
 	# IF FILE IS NULL, RETURN LINES OF SVG OBJECTS
 	if(is.null(file)) return(new_lines)

@@ -1,5 +1,5 @@
 //var shape_tags = ['arrow', 'circle', 'line', 'path', 'pathC', 'point', 'polygon', 'text'];
-var shape_tags = ['circle', 'line', 'text', 'path', 'point'];
+var shape_tags = ['circle', 'image', 'line', 'arrow', 'text', 'path', 'point'];
 var shape_names = firstToUpperCase(shape_tags);
 //var shape_transform = addC(shape_tags, 's').concat(['pointsAnimate']);
 var shape_transform = addC(shape_tags, 's').concat(addC(shape_tags, 'sAnimate'));
@@ -23,25 +23,27 @@ Layers = new Array();
 
 var zoom = 280;
 var maxzoom = -200;
+var frame_adv = 1;
 var eyez = 300;
 var depth = Math.floor(zoom * (eyez - maxzoom) / 100 + eyez);
-var margin = 40;
 
 var shape_properties = [
 	'x', 'y', 'z', 
 	'x1', 'y1', 'z1', 'x2', 'y2', 'z2', 
 	'cx', 'cy', 'cz',
+	'l', 'a', 'h', 'w'
 ];
 
 var attribute_properties = [
 	'r', 'fill', 'stroke', 'fill_opacity', 'stroke_opacity', 'opacity', 'stroke_width', 
 	'z_index', 'text_anchor', 'font_size', 'font_family', 'font_style', 
-	'font_weight', 'letter_spacing', 'writing_mode', 'glyph_orientation_vertical'
+	'font_weight', 'letter_spacing', 'writing_mode', 'glyph_orientation_vertical', 
+	'src', 'preserveAspectRatio'
 ];
 
 var properties = shape_properties.concat(attribute_properties);
 var opacity_types = ['opacity', 'stroke_opacity', 'fill_opacity'];
-
+var rotate_mode = true;
 
 var animation_length = 0;
 var frame_width = 10;
@@ -55,7 +57,6 @@ var set_key_event_calls = 0;
 
 var anim_n = 0;
 var arrow_angle = 25;
-var background_color;
 var currentEvent = "nothing";
 var globalkeypress = '';
 var IE = document.all ? true : false
@@ -67,7 +68,7 @@ var svgns = "http://www.w3.org/2000/svg";
 var tempX = 0;
 var tempY = 0;
 var mousedown = 0;
-var path_max_iter = 1500; // Also max iteration for number of animation duration
+var control_panel_visible = true;
 
 var point_color_r = 100;
 var point_color_g = 0;
@@ -87,12 +88,6 @@ var ajax_output;
 test_array = new Array();
 
 zindex = new Array();
-Arrows = new Array();
-Images = new Array();
-Lines = new Array();
-LinesC = new Array();
-Paths = new Array();
-PathsC = new Array();
 points_i_to_k = new Array();
 RefPoints = new Array();
 Shapes = new Array();
@@ -105,32 +100,45 @@ AnimateLines = new Array();
 Translate = new Array();
 Rotate = new Array();
 
-function addReverseAnimationStates(a){
-	var i, j, k;
-
-	for(i in a){
-		for(j = a[i].length - 1;j >= 0;j--){
-			var new_j = a[i].length;
-			a[i][new_j] = new Array();
-			for(k = 0;k < a[i][j].length;k++){
-				a[i][new_j][k] = a[i][j][k];
-			}
-		}
-	}
-	return a;
-}
-
-function animateShapes(){
+function animateShapes(anim_frame){
 
 	var i, j, k, len, len_i, len_j;
 	var shape;
 	var anim_n_i = anim_n;
+
+	// If animation frame is undefined
+	if(anim_frame == undefined){
+
+		// If no animation reverse, reset frame number to zero at end
+		if(!animation_reverse){
+			if(anim_n >= animation_length || anim_n <= 0){
+				anim_n = 0;
+				frame_adv = 1;
+			}
+		}
+
+		// If animation reverse is true reverse direction of frame count
+		if(animation_reverse){
+			if(anim_n <= 0) frame_adv = 1
+			if(anim_n >= animation_length){
+				anim_n = animation_length-1;
+				frame_adv = -1;
+			}
+		}
 	
-	// RESET FRAME NUMBER IF REACHED MAXIMUM
-	if(anim_n == animation_length) anim_n = 0
-	
-	// INCREASE ANIMATION REPEAT COUNT
-	if(anim_n < anim_n_i) animation_count++
+		// INCREASE ANIMATION REPEAT COUNT
+		if(anim_n < anim_n_i) animation_count++
+
+	}else{
+
+		// Check that frame number is greater than zero
+		if(anim_frame < 0) var anim_frame = 0;
+
+		// Check that frame number does not exceed animation length
+		if(anim_frame >= animation_length) var anim_frame = animation_length-1;
+		
+		anim_n = anim_frame;
+	}
 
 	// IF MAXIMUM NUMBER OF REPEATS IS REACHED, STOP ANIMATION
 	if(animation_repeat > -1 && animation_count > animation_repeat){
@@ -150,6 +158,17 @@ function animateShapes(){
 		}
 	}
 
+	if(images_animate){
+		for(i = 0, len = imagesAnimate.length;i < len; i++){
+			images[imagesAnimateI[i]].x1 = imagesAnimate[i].x1[anim_n];
+			images[imagesAnimateI[i]].y1 = imagesAnimate[i].y1[anim_n];
+			images[imagesAnimateI[i]].z1 = imagesAnimate[i].z1[anim_n];
+			images[imagesAnimateI[i]].x2 = imagesAnimate[i].x2[anim_n];
+			images[imagesAnimateI[i]].y2 = imagesAnimate[i].y2[anim_n];
+			images[imagesAnimateI[i]].z2 = imagesAnimate[i].z2[anim_n];
+		}
+	}
+
 	if(lines_animate){
 		for(i = 0, len = linesAnimate.length;i < len; i++){
 			lines[linesAnimateI[i]].x1 = linesAnimate[i].x1[anim_n];
@@ -158,6 +177,17 @@ function animateShapes(){
 			lines[linesAnimateI[i]].x2 = linesAnimate[i].x2[anim_n];
 			lines[linesAnimateI[i]].y2 = linesAnimate[i].y2[anim_n];
 			lines[linesAnimateI[i]].z2 = linesAnimate[i].z2[anim_n];
+		}
+	}
+
+	if(arrows_animate){
+		for(i = 0, len = arrowsAnimate.length;i < len; i++){
+			arrows[arrowsAnimateI[i]].x1 = arrowsAnimate[i].x1[anim_n];
+			arrows[arrowsAnimateI[i]].y1 = arrowsAnimate[i].y1[anim_n];
+			arrows[arrowsAnimateI[i]].z1 = arrowsAnimate[i].z1[anim_n];
+			arrows[arrowsAnimateI[i]].x2 = arrowsAnimate[i].x2[anim_n];
+			arrows[arrowsAnimateI[i]].y2 = arrowsAnimate[i].y2[anim_n];
+			arrows[arrowsAnimateI[i]].z2 = arrowsAnimate[i].z2[anim_n];
 		}
 	}
 
@@ -174,6 +204,7 @@ function animateShapes(){
 			texts[textsAnimateI[i]].x = textsAnimate[i].x[anim_n];
 			texts[textsAnimateI[i]].y = textsAnimate[i].y[anim_n];
 			texts[textsAnimateI[i]].z = textsAnimate[i].z[anim_n];
+			texts[textsAnimateI[i]].s = textsAnimate[i].s[anim_n];
 		}
 	}
 
@@ -185,6 +216,7 @@ function animateShapes(){
 			for(j = 0, len_j = attribute_properties.length;j < len_j; j++){
 
 				if(circlesAttributesAnimate[i][attribute_properties[j]] == null) continue
+				if(attribute_properties[j] == 'r') continue // 'r' is saved in 'circles'
 
 				circlesAttributes[circlesAttributesAnimate[i].i][attribute_properties[j]] = 
 					circlesAttributesAnimate[i][attribute_properties[j]][anim_n];
@@ -192,6 +224,22 @@ function animateShapes(){
 
 			shape = svgDocument.getElementById('circle' + circlesAttributesAnimate[i].i);
 			shape.setAttribute("style", attributesToString(circlesAttributes[circlesAttributesAnimate[i].i]));
+		}
+	}
+
+	if(images_attributes_animate){
+
+		for(i = 0, len_i = imagesAttributesAnimate.length;i < len_i; i++){
+			for(j = 0, len_j = attribute_properties.length;j < len_j; j++){
+
+				if(imagesAttributesAnimate[i][attribute_properties[j]] == null) continue
+
+				imagesAttributes[imagesAttributesAnimate[i].i][attribute_properties[j]] = 
+					imagesAttributesAnimate[i][attribute_properties[j]][anim_n];
+			}
+
+			shape = svgDocument.getElementById('image' + imagesAttributesAnimate[i].i);
+			shape.setAttribute("style", attributesToString(imagesAttributes[imagesAttributesAnimate[i].i]));
 		}
 	}
 
@@ -211,6 +259,26 @@ function animateShapes(){
 		}
 	}
 
+	if(arrows_attributes_animate){
+
+		for(i = 0, len_i = arrowsAttributesAnimate.length;i < len_i; i++){
+			for(j = 0, len_j = attribute_properties.length;j < len_j; j++){
+
+				if(arrowsAttributesAnimate[i][attribute_properties[j]] == null) continue
+
+				arrowsAttributes[arrowsAttributesAnimate[i].i][attribute_properties[j]] = 
+					arrowsAttributesAnimate[i][attribute_properties[j]][anim_n];
+			}
+
+			shape = svgDocument.getElementById('arrow' + arrowsAttributesAnimate[i].i);
+			shape.setAttribute("style", attributesToString(arrowsAttributes[arrowsAttributesAnimate[i].i]));
+			shape = svgDocument.getElementById('arrowha' + arrowsAttributesAnimate[i].i);
+			shape.setAttribute("style", attributesToString(arrowsAttributes[arrowsAttributesAnimate[i].i]));
+			shape = svgDocument.getElementById('arrowhb' + arrowsAttributesAnimate[i].i);
+			shape.setAttribute("style", attributesToString(arrowsAttributes[arrowsAttributesAnimate[i].i]));
+		}
+	}
+
 	if(points_attributes_animate){
 
 		for(i = 0, len_i = pointsAttributesAnimate.length;i < len_i; i++){
@@ -224,7 +292,7 @@ function animateShapes(){
 
 			shape = svgDocument.getElementById('point' + pointsAttributesAnimate[i].i);
 			shape.setAttribute("style", attributesToString(pointsAttributes[pointsAttributesAnimate[i].i]));
-			if(pointsAttributesAnimate[i].r !== null) shape.setAttribute("r", pointsAttributesAnimate[i].r[anim_n]);
+			shape.setAttribute("r", pointsAttributesAnimate[i].r[anim_n]);
 		}
 	}
 
@@ -244,44 +312,35 @@ function animateShapes(){
 		}
 	}
 
-	anim_n++;
+	// Update animation controls
+	var frame_input =document.getElementById('animation_frame_count_input');
+
+	// Check that frame controls are present
+	if(frame_input !== null){
+
+		// Add frame count to animation frame input
+		document.getElementById('animation_frame_count_input').value = (anim_n+1);
+
+		// Update slider position
+		document.getElementById('animation_frame_range_input').value = Math.round(((anim_n) / (animation_length-1))*100);
+	}
+
+	anim_n = anim_n + frame_adv;
 	updateShapes();
 
 	return;
+}
 
-	animation_length_wreverse = animation_length
-	if(animation_reverse) animation_length_wreverse = animation_length*2
+function applyCookies(){
 
-	if(Translate.length > 0){
-		if((animation_count*animation_length_wreverse + anim_n) < Translate.length){
-			currentEvent = "translateX";
-			d = Translate[anim_n][0];
-			doEvent();
-	
-			currentEvent = "translateY";
-			d = Translate[anim_n][1];
-			doEvent();
-	
-			currentEvent = "translateZ";
-			d = Translate[anim_n][2];
-			doEvent();
-		}
-	}
+	var cookies = listCookies();
 
-	if(Rotate.length > 0){
-		if((animation_count*animation_length_wreverse + anim_n) < Rotate.length){
-			currentEvent = "rotateXaxis";
-			d = Rotate[anim_n][0];
-			doEvent();
-	
-			currentEvent = "rotateYaxis";
-			d = Rotate[anim_n][1];
-			doEvent();
-	
-			currentEvent = "rotateZaxis";
-			d = Rotate[anim_n][2];
-			doEvent();
-		}
+	for (i = 0; i < cookies.length; i++) {
+
+		if(cookies[i].value == undefined) continue;
+
+		// Call function call cookies using eval
+		if(cookies[i].value == 'eval') eval(cookies[i].name);
 	}
 }
 
@@ -293,7 +352,6 @@ function changeLayerOpacity(layer, opacity){
 	var opacity_i, stroke_opacity_i, fill_opacity_i;
 	var animate_idx;
 
-	// Add shapes to SVG document
 	for (i = 0, len = Layers.length; i < len; i++) {
 
 		match = false;
@@ -305,7 +363,7 @@ function changeLayerOpacity(layer, opacity){
 		}else{
 			for (j = 0, len_j = Layers[i].layer.length; j < len_j; j++) if(Layers[i].layer[j] == layer) match = true;
 		}
-		
+
 		if(!match) continue;
 		
 		var opacity_i;
@@ -317,21 +375,29 @@ function changeLayerOpacity(layer, opacity){
 
 		for (j = 0, len_j = opacity_types.length; j < len_j; j++){
 
-			eval(opacity_types[j] + '_i = ' + Layers[i].type + 'sAttributes[' + Layers[i].i 
-				+ '].' + opacity_types[j] + ';')
+			eval('var is_attribute = ' + Layers[i].type + 'sAttributes[' + Layers[i].i + '].' + opacity_types[j] + ';')
+				
+			if(is_attribute == undefined) continue;
 
-			eval('if(' + opacity_types[j] + '_i !== undefined){' + Layers[i].type + 
-				'sAttributes[' + Layers[i].i + '].' + opacity_types[j] + ' = ' + opacity + ';' + 
-				'shape = svgDocument.getElementById(Layers[i].type + Layers[i].i);' + 
-				'shape.setAttribute("style", attributesToString(' + Layers[i].type + 
-				'sAttributes[' + Layers[i].i + ']));}');
+			eval(Layers[i].type + 'sAttributes[' + Layers[i].i + '].' + opacity_types[j] + ' = ' + opacity + ';');
+			var shape = svgDocument.getElementById(Layers[i].type + Layers[i].i);
+			eval('shape.setAttribute("style", attributesToString(' + Layers[i].type + 'sAttributes[' + Layers[i].i + ']));');
+
+			if(Layers[i].type == 'arrow'){
+				var shape = svgDocument.getElementById(Layers[i].type + 'ha' + Layers[i].i);
+				eval('shape.setAttribute("style", attributesToString(' + Layers[i].type + 'sAttributes[' + Layers[i].i + ']));');
+
+				var shape = svgDocument.getElementById(Layers[i].type + 'hb' + Layers[i].i);
+				eval('shape.setAttribute("style", attributesToString(' + Layers[i].type + 'sAttributes[' + Layers[i].i + ']));');
+			}
 		}
-
+		
 		if(Layers[i].type !== 'path'){
-
+			
 			eval('animate_idx = ' + Layers[i].type + 'sAttributes[' + Layers[i].i + '].animate');
 
 			if(animate_idx !== null){
+
 				for (j = 0, len_j = opacity_types.length; j < len_j; j++){
 
 					eval(opacity_types[j] + '_i = ' + Layers[i].type + 'sAttributesAnimate[' + animate_idx 
@@ -359,6 +425,10 @@ function fitShapesToWindow(){
 		// Get limits for each shape
 		eval('shape_limits = limits(' + shape_transform[i] + ');');
 
+		if(shape_limits.xmin == undefined) continue;
+		if(shape_limits.xmin == -Infinity) continue;
+		if(isNaN(shape_limits.xmin)) continue;
+
 		// Add limits to array
 		xmin.push(shape_limits.xmin);
 		xmax.push(shape_limits.xmax);
@@ -368,65 +438,70 @@ function fitShapesToWindow(){
 		zmax.push(shape_limits.zmax);
 	}
 
-	// Remove NaN values
+	// Remove NaN and Infinity values
 	xmin = clean(xmin, NaN);
+	xmin = clean(xmin, Infinity);
 	xmax = clean(xmax, NaN);
+	xmax = clean(xmax, Infinity);
 	ymin = clean(ymin, NaN);
+	ymin = clean(ymin, Infinity);
 	ymax = clean(ymax, NaN);
+	ymax = clean(ymax, Infinity);
 	zmin = clean(zmin, NaN);
+	zmin = clean(zmin, Infinity);
 	zmax = clean(zmax, NaN);
+	zmax = clean(zmax, Infinity);
 
 	// Find ranges for all shapes
-	xmin = Math.min.apply(Math, xmin);
-	ymin = Math.min.apply(Math, ymin);
-	zmin = Math.min.apply(Math, zmin);
+	xmin = min.apply(Math, xmin);
+	ymin = min.apply(Math, ymin);
+	zmin = min.apply(Math, zmin);
+
+	// Find ranges for all shapes
+	xmax = max.apply(Math, xmax);
+	ymax = max.apply(Math, ymax);
+	zmax = max.apply(Math, zmax);
 
 	// Find ranges
-	var x_range = Math.max.apply(Math, xmax) - xmin;
-	var y_range = Math.max.apply(Math, ymax) - ymin;
-	var z_range = Math.max.apply(Math, zmax) - zmin;
+	var x_range = xmax - xmin;
+	var y_range = ymax - ymin;
+	var z_range = zmax - zmin;
 
-	if(isNaN(x_range) || isNaN(y_range) || isNaN(z_range)) return;
+	// Replace any zero x,y ranges with maximum range
+	var max_range = max.apply(Math, [x_range, y_range, z_range]);
+	if(x_range == 0) x_range = max_range;
+	if(y_range == 0) y_range = max_range;
 
-	if(x_range == 0){
-		xmin = -1
-		xmax = 1
-		x_range = 2
-	}
-	if(y_range == 0){
-		ymin = -1
-		ymax = 1
-		y_range = 2
-	}
-	if(z_range == 0){
-		zmin = -1
-		zmax = 1
-		z_range = 2
-	}
+	// If all ranges are zero, make scaling 1
+	if(x_range == 0 && y_range == 0 && z_range == 0){
 
-	var mm_to_pixel = (-(depth - eyez) / - eyez);
+		scaling = 1;
 
-	var view_width = getWindowWidth() - 2*margin;
-	var view_height = getWindowHeight() - 2*margin;
-
-	var rw = (x_range*mm_to_pixel)/view_width;
-	var rh = (y_range*mm_to_pixel)/view_height;
-	var rd = (z_range*mm_to_pixel)/view_height;
-
-	if(x_range*mm_to_pixel > view_width){
-		if(rw > rh){
-			if(rd > rw){var factor = 1/rd*2;}else{var factor = 1/rw;}
-		}else{
-			if(rd > rh){var factor = 1/rd*2;}else{var factor = 1/rh;}		
-		}
 	}else{
-		if(rw > rh){
-			if(rd > rw){var factor = 1/rd;}else{var factor = 1/rw;}
-		}else{
-			if(rd > rh){var factor = 1/rd;}else{var factor = 1/rh;}		
-		}
-	}
 
+		// Get window dimensions
+		if(z_range == 0){
+			var view_width = getWindowWidth() - 5*margin;
+			var view_height = getWindowHeight() - 5*margin;
+		}else{
+			var view_width = getWindowWidth() - 2*margin;
+			var view_height = getWindowHeight() - 2*margin;
+		}
+
+		// Find projection factor
+		var u = -(depth - eyez) / ((z_range / 2) - eyez);
+		var u2 = -(depth - eyez) / ((-z_range / 2) - eyez);
+
+		// Solve for scaling from each dimension
+		var scaling_x = 1 / ((((x_range / 2) * (depth - eyez)) / (eyez * ((getWindowWidth() - margin) - x_window_shift))) + ((z_range / 2) / eyez));
+		var scaling_y = 1 / ((((y_range / 2) * (depth - eyez)) / (eyez * ((getWindowHeight() - margin) - y_window_shift))) + ((z_range / 2) / eyez));
+
+		// Take minimum scaling
+		scaling = Math.min(scaling_x, scaling_y)
+	}
+	
+	//alert('Ranges:\nx:\t' + xmin + ', ' + xmax + ' (' + x_range + ')\ny:\t' + ymin + ', ' + ymax + ' (' + y_range + ')\nz:\t' + zmin + ', ' + zmax + ' (' + z_range + ')');
+	
 	// Find center
 	var center = [(xmin + x_range/2), (ymin + y_range/2), (zmin + z_range/2)];
 
@@ -434,14 +509,12 @@ function fitShapesToWindow(){
 	for (i = 0, len = shape_transform.length; i < len; i++) eval('translate(' + shape_transform[i] + ', ' + -center[0] + ', ' + -center[1] + ', ' + -center[2] + ')');
 
 	// Scale all shapes
-	for (i = 0, len = shape_transform.length; i < len; i++) eval('scale(' + shape_transform[i] + ', ' + factor + ')');
+	for (i = 0, len = shape_transform.length; i < len; i++) eval('scale(' + shape_transform[i] + ', ' + scaling + ')');
 
 	return;
 }
 
 function getMouseMoveXY(e){
-
-	//document.getElementById("div_status").innerHTML = e.clientX + ', ' + e.clientY;
 
 	if(initiate == 0){
 		prevX = initialX;
@@ -459,20 +532,21 @@ function getMouseMoveXY(e){
 
 	if (tempX < 0){tempX = 0;}
 	if (tempY < 0){tempY = 0;}  
+
 	if(mousedown == 1 && globalkeypress == ''){
 
 		distX = tempX - prevX;
 		distY = prevY - tempY;
 		
-		if(distX !== 0){setKeyEvent("translateX", Math.round(distX/4.667));}  // manually calibrated
-		if(distY !== 0){setKeyEvent("translateY", Math.round(distY/4.667));}
+		if(distX !== 0){setKeyEvent("translateX", distX/4.667);}  // manually calibrated
+		if(distY !== 0){setKeyEvent("translateY", distY/4.667);}
 	}
-	if(mousedown == 1 && globalkeypress == 'r'){
+	if(mousedown == 1 && (globalkeypress == 'r' || rotate_mode == true)){
 		distX = tempX - prevX;
 		distY = prevY - tempY;
 		
-		if(distX !== 0){setKeyEvent("rotateYaxis", Math.round(-distX));}
-		if(distY !== 0){setKeyEvent("rotateXaxis", Math.round(distY));}
+		if(distX !== 0){setKeyEvent("rotateYaxis", -distX);}
+		if(distY !== 0){setKeyEvent("rotateXaxis", distY);}
 	}
 
 	prevX = tempX
@@ -501,25 +575,28 @@ function getShapes(){
 
 	var i, j, k;
 	var len_j, len_k;
+	var shape_tag;
 	var doc_shapes;
 	var doc_shapes_len;
 	var property_name;
 	var attributes_animate;
-	var array_reverse;
 
 	// ADD LINESC TO SHAPES FOR LOCAL USE ONLY
 	var shape_tags_loc = shape_tags.slice();
 	shape_tags_loc.push('pathC');
 
 	for(i = 0; i < shape_tags_loc.length; i++){
+	
+		shape_tag = shape_tags_loc[i];
+		if(shape_tag == 'image') shape_tag = 'img';
 		
-		doc_shapes = document.getElementsByTagName(shape_tags_loc[i])
-		
+		doc_shapes = document.getElementsByTagName(shape_tag)
+
 		if(!doc_shapes.length) continue;
-		
+
 		for(j = 0, len_j = doc_shapes.length;j < len_j; j++){
 
-			// CLEAR PROPERTY VARIABLES
+			// Clear property variables
 			for(k = 0, len_k = properties.length;k < len_k; k++)
 				eval("var " + properties[k] + " = null;var " + properties[k] + "_init = null;");
 
@@ -531,17 +608,7 @@ function getShapes(){
 				if(doc_shapes[j].getAttribute(property_name) == null) continue;
 				
 				if(doc_shapes[j].getAttribute(property_name).indexOf(',') > -1){
-
 					eval(shape_properties[k] + " = doc_shapes[j].getAttribute(\"" + property_name + "\").split(\",\");");
-
-					// ADD REVERSE STATES
-					if(animation_reverse){
-						eval("array_reverse = " + shape_properties[k] + ".slice();");
-						eval(shape_properties[k] + " = " + shape_properties[k] + ".concat(array_reverse.reverse());");
-					}
-					
-					//if(shape_properties[k] == 'x') if(x.length > 1) alert(x)
-
 					eval("animation_length = " + shape_properties[k] + ".length;");
 					eval(shape_properties[k] + "_init = " + shape_properties[k] + "[0]");
 				}else{
@@ -550,22 +617,16 @@ function getShapes(){
 				}
 			}
 
-			// SET ATTRIBUTE PROPERTIES
+			// Set attribute properties
 			attributes_animate = false;
 			for(k = 0, len_k = attribute_properties.length;k < len_k; k++){
 
 				property_name = attribute_properties[k].replace(/_/g, '-')
 
 				if(doc_shapes[j].getAttribute(property_name) == null) continue;
-				
-				if(doc_shapes[j].getAttribute(property_name).indexOf(',') > -1){
+
+				if(doc_shapes[j].getAttribute(property_name).indexOf(',') > -1 && doc_shapes[j].getAttribute(property_name).indexOf('rgb') == -1 && property_name !== 'src'){
 					eval(attribute_properties[k] + " = doc_shapes[j].getAttribute(\"" + property_name + "\").split(\",\");");
-
-					if(animation_reverse){
-						eval("array_reverse = " + attribute_properties[k] + ".slice();");
-						eval(attribute_properties[k] + " = " + attribute_properties[k] + ".concat(array_reverse.reverse());");
-					}
-
 					eval("animation_length = " + attribute_properties[k] + ".length;");
 					eval(attribute_properties[k] + "_init = " + attribute_properties[k] + "[0]");
 					attributes_animate = true;
@@ -579,10 +640,12 @@ function getShapes(){
 
 				circles[j] = new circle(parseFloat(cx_init), parseFloat(cy_init), parseFloat(cz_init), parseFloat(r_init));
 
+				// Multiple center coordinates given but only single radius, replicate to same length
 				if(cx !== null && r == null){
 					r = Array.apply(null, new Array(cx.length)).map(String.prototype.valueOf, r_init);
 				}
 
+				// Multiple radii given but only single center coordinate, replicate to same length
 				if(cx == null && r !== null){
 					cx = Array.apply(null, new Array(r.length)).map(String.prototype.valueOf, cx_init);
 					cy = Array.apply(null, new Array(r.length)).map(String.prototype.valueOf, cy_init);
@@ -609,6 +672,69 @@ function getShapes(){
 
 				if(attributes_animate){
 					circlesAttributesAnimate[circlesAttributesAnimate.length] = 
+						new shapeAttributesAnimate(j, fill, fill_opacity, stroke, 
+						stroke_opacity, stroke_width, r, z_index
+					);
+				}
+			}
+
+			if(shape_tags_loc[i] == 'image'){
+
+				images[j] = new line(
+					parseFloat(x1_init), parseFloat(y1_init), parseFloat(z1_init), 
+					parseFloat(x2_init), parseFloat(y2_init), parseFloat(z2_init));
+
+				if(x1 !== null){
+					imagesAnimate[imagesAnimate.length] = new lineAnimate(
+						x1.map(parseFloat), y1.map(parseFloat), z1.map(parseFloat), 
+						x2.map(parseFloat), y2.map(parseFloat), z2.map(parseFloat)
+					);
+					imagesAnimateI.push(j);
+				}
+
+				imagesAttributes[j] = new imageAttributes(
+					(!src_init ? 0 : src_init),
+					(!preserveAspectRatio_init ? 'none' : preserveAspectRatio_init),
+					(!opacity_init ? 1 : opacity_init),
+					(!z_index_init ? 0 : z_index_init),
+					(!attributes_animate ? null : imagesAttributesAnimate.length)
+				);
+
+				if(attributes_animate){
+					imagesAttributesAnimate[imagesAttributesAnimate.length] = 
+						new imageAttributesAnimate(j, src, preserveAspectRatio, opacity, z_index);
+				}
+			}
+
+			if(shape_tags_loc[i] == 'arrow'){
+
+				arrows[j] = new arrow(
+					parseFloat(x1_init), parseFloat(y1_init), parseFloat(z1_init), 
+					parseFloat(x2_init), parseFloat(y2_init), parseFloat(z2_init),
+					parseFloat(l_init), parseFloat(a_init));
+
+				if(x1 !== null){
+					arrowsAnimate[arrowsAnimate.length] = new arrowAnimate(
+						x1.map(parseFloat), y1.map(parseFloat), z1.map(parseFloat), 
+						x2.map(parseFloat), y2.map(parseFloat), z2.map(parseFloat),
+						parseFloat(l_init), parseFloat(a_init)
+					);
+					arrowsAnimateI.push(j);
+				}
+
+				arrowsAttributes[j] = new shapeAttributes(
+					"none",
+					"none",
+					(!stroke_init ? "black" : stroke_init),
+					(!stroke_opacity_init ? 1 : stroke_opacity_init),
+					(!stroke_width_init ? 1 : stroke_width_init),
+					'',
+					(!z_index_init ? 0 : z_index_init),
+					(!attributes_animate ? null : arrowsAttributesAnimate.length)
+				);
+
+				if(attributes_animate){
+					arrowsAttributesAnimate[arrowsAttributesAnimate.length] = 
 						new shapeAttributesAnimate(j, fill, fill_opacity, stroke, 
 						stroke_opacity, stroke_width, r, z_index
 					);
@@ -716,17 +842,28 @@ function getShapes(){
 
 			if(shape_tags_loc[i] == 'text'){
 
+				// Multiple coordinates given but only single font size, replicate to same length
+				if(x !== null && font_size == null){
+					font_size = Array.apply(null, new Array(x.length)).map(String.prototype.valueOf, font_size_init);
+				}
+
+				// Multiple font sizes given but only single coordinate, replicate to same length
+				if(x == null && font_size !== null){
+					x = Array.apply(null, new Array(font_size.length)).map(String.prototype.valueOf, x_init);
+					y = Array.apply(null, new Array(font_size.length)).map(String.prototype.valueOf, y_init);
+					z = Array.apply(null, new Array(font_size.length)).map(String.prototype.valueOf, z_init);
+				}
+
 				if(x !== null){
-					textsAnimate[textsAnimate.length] = new pointAnimate(x.map(parseFloat), y.map(parseFloat), z.map(parseFloat));
+					textsAnimate[textsAnimate.length] = new textAnimate(x.map(parseFloat), y.map(parseFloat), z.map(parseFloat), font_size.map(parseFloat));
 					textsAnimateI.push(j);
 				}
 
-				texts[j] = new point(parseFloat(x_init), parseFloat(y_init), parseFloat(z_init));
+				texts[j] = new text(parseFloat(x_init), parseFloat(y_init), parseFloat(z_init), (!font_size_init ? 12 : font_size_init));
 
 				textsAttributes[j] = new textAttributes(
 					doc_shapes[j].childNodes[0].nodeValue,
 					(!text_anchor_init ? "middle" : text_anchor_init),
-					(!font_size_init ? 12 : font_size_init),
 					(!fill_init ? "black" : fill_init),
 					(!opacity_init ? 1 : opacity_init),
 					(!font_family_init ? "Arial" : font_family_init),
@@ -741,7 +878,7 @@ function getShapes(){
 
 				if(attributes_animate){
 					textsAttributesAnimate[textsAttributesAnimate.length] = 
-						new textAttributesAnimate(j, text_anchor, font_size, fill, 
+						new textAttributesAnimate(j, text_anchor, fill, 
 						opacity, font_family, font_style, font_weight, letter_spacing, 
 						writing_mode, glyph_orientation_vertical, z_index);
 				}
@@ -756,46 +893,6 @@ function getShapes(){
 
 	// SET REFERENCE POINTS
 	RefPoints = new Array(0,0,0)
-}
-
-function getWindowSizeProjection(z){
-
-	if(z == null) var z = RefPoints[0][2];
-
-	var x_window_shift = getWindowWidth()/2;
-	var y_window_shift = getWindowHeight()/2;
-
-	var min_x = -(z - eyez)*(-x_window_shift)/(depth - eyez) - RefPoints[0][0]
-	var max_x = -(z - eyez)*(x_window_shift)/(depth - eyez) - RefPoints[0][0]
-
-	var min_y = -(z - eyez)*(-y_window_shift)/(depth - eyez) - RefPoints[0][1]
-	var max_y = -(z - eyez)*(y_window_shift)/(depth - eyez) - RefPoints[0][1]
-
-	//alert(min_x + ', ' + max_x + ', ' + min_y + ', ' + max_y);
-
-	return {min_x : min_x, max_x : max_x, min_y : min_y, max_y : max_y, range_x : max_x-min_x, range_y : max_y-min_y};
-}
-
-function loadBackground(){
-
-	if(document.getElementsByTagName("background").length){
-		for(i = 0;i < document.getElementsByTagName("background").length;i++){
-
-			var svg_elem = document.getElementsByTagName("background")[i];
-			background_color  = svg_elem.getAttribute("color");
-
-			var rect = document.createElementNS(svgns, "rect");
-
-			rect.setAttribute("width", window_properties.width*4);
-			rect.setAttribute("height", window_properties.height*4);
-			rect.setAttribute("x", 0);
-			rect.setAttribute("y", 0);
-			rect.setAttribute("fill", background_color);
-			svgDocument.appendChild(rect);
-		}
-	}else{
-		background_color = "white";
-	}
 }
 
 function onLoadFunctions(evt){
@@ -819,9 +916,9 @@ function onLoadFunctions(evt){
 	document.getElementById('keydown').onclick = setEvents;
 	document.getElementById('keydown').onclick();
 	document.onkeyup = detectKeyUp;
-	//document.onmousemove = getMouseMoveXY;
-	//document.onmousedown = mouseDownEvent;
-	//document.onmouseup = mouseUpEvent;
+//	document.onmousemove = getMouseMoveXY;
+//	document.onmousedown = mouseDownEvent;
+//	document.onmouseup = mouseUpEvent;
 
 	svgDocument.onmousemove = getMouseMoveXY;
 	svgDocument.onmousedown = mouseDownEvent;
@@ -837,28 +934,25 @@ function onLoadFunctions(evt){
 	get_transformations();
 	setAnimationParameters();
 
-//	if(AnimatePoints[0]) animation_length = AnimatePoints[0].length;	
-//	if(AnimateArrows[0]) animation_length = AnimateArrows[0].length;	
-//	if(AnimateLines[0]) animation_length = AnimateLines[0].length;	
+	// Apply default show/hide control panel
+	if(show_control_panel){showHideControlPanel("show", false);}else{showHideControlPanel("hide", false);}
+	if(start_rotate){toggle_rotate_mode("rotate", false);}else{toggle_rotate_mode("translate", false);}
 
-	loadBackground();
+	// Set background color
+	svgDocument.style.backgroundColor = background_color;
+
 	renderShapes();
-
-	if(Images.length == 0){
-		set_interzoom_interval = 0;
-		zoom_scroll_strength = 0.1;
-	}
-
 	fitShapesToWindow();
-//	alert('h')
 	updateShapes();
+	applyCookies();
+	writeControlIcon();
 
-	if(animation_length > 1){
-//		if(animation_reverse){AnimatePoints = addReverseAnimationStates(AnimatePoints);}
-//		if(animation_reverse){AnimateArrows = addReverseAnimationStates(AnimateArrows);}
-//		if(animation_reverse){AnimateLines = addReverseAnimationStates(AnimateLines);}
-		startAnimation();
-	}
+	if(animation_length > 1) startAnimation();
+	
+	//changeLayerOpacity('Joint constraints', 0.2);
+
+	// Clear all cookies
+	//var cookies = listCookies();for (var i = 0; i < cookies.length; i++) deleteCookie(cookies[i].name);
 }
 
 function onWindowResize(){
@@ -872,12 +966,45 @@ function onWindowResize(){
 	fitShapesToWindow();
 }
 
-function pixel_to_font_size(pixel_height){
-	return pixel_height*1.43;
-}
+function playPauseAnimation(state){
 
-function playPauseAnimation(){
-	if(stop_anim == 1){clearInterval(intervalID);}else{startAnimation();}
+	// If state is undefined, reverse current state
+	if(state == undefined){
+		if(stop_anim == 1){stop_anim = 0;}else{stop_anim = 1;}
+	}else{
+		if(state == 'stop'){stop_anim = 1;}else{stop_anim = 0;}
+	}
+
+	var control_play = document.getElementById('control_play');
+	var control_icon_play = document.getElementById('control_icon_play');
+
+	if(stop_anim == 1){
+		// Pause animation
+		clearInterval(intervalID);
+		
+		if(control_play == null) return;
+
+		// Set play/pause icon to play
+		control_play.title = 'Click to play animation or press the spacebar';
+		control_play.style.padding = '0px 2px 0px 3px';
+		control_icon_play.innerHTML = '&#9654;';
+		control_icon_play.style.fontSize = '1.2em';
+		control_icon_play.style.lineHeight = '23px';
+		control_icon_play.style.letterSpacing = '-1px';
+	}else{
+		// Play animation
+		startAnimation();
+
+		if(control_play == null) return;
+
+		// Set play/pause icon to pause
+		control_play.title = 'Click to pause animation or press the spacebar';
+		control_play.style.padding = '0px 0px 0px 5px';
+		control_icon_play.innerHTML = '&#9612; &#9612;';
+		control_icon_play.style.fontSize = '0.8em';
+		control_icon_play.style.lineHeight = '19px';
+		control_icon_play.style.letterSpacing = '-1px';
+	}
 }
 
 function renderShapes(){ 	 	
@@ -899,11 +1026,17 @@ function renderShapes(){
 		svg_shape_type = ZOrders[i].type;
 		if(svg_shape_type == 'point') svg_shape_type = 'circle';
 		if(svg_shape_type == 'pathC') svg_shape_type = 'path';
+		if(svg_shape_type == 'arrow') svg_shape_type = 'line';
 
 		shape = document.createElementNS(svgns, svg_shape_type);
 		shape.setAttribute("id", ZOrders[i].type + idx);
 
 		eval('shape.setAttribute("style", attributesToString(' + ZOrders[i].type + 'sAttributes[' + idx + ']))');
+
+		if(ZOrders[i].type == 'image'){
+			shape.setAttributeNS('http://www.w3.org/1999/xlink', 'href', imagesAttributes[idx].src);
+			shape.setAttribute("preserveAspectRatio", imagesAttributes[idx].preserveAspectRatio);
+		}
 
 		if(ZOrders[i].type == 'text'){
 			var textBlock = document.createTextNode(textsAttributes[idx].text);
@@ -913,6 +1046,17 @@ function renderShapes(){
 		if(ZOrders[i].type == 'point') shape.setAttribute("r", pointsAttributes[idx].r);
 
 		svgDocument.appendChild(shape);
+
+		if(ZOrders[i].type == 'arrow'){
+			shape = document.createElementNS(svgns, svg_shape_type);
+			shape.setAttribute("id", ZOrders[i].type + 'ha' + idx);
+			eval('shape.setAttribute("style", attributesToString(' + ZOrders[i].type + 'sAttributes[' + idx + ']))');
+			svgDocument.appendChild(shape);
+			shape = document.createElementNS(svgns, svg_shape_type);
+			shape.setAttribute("id", ZOrders[i].type + 'hb' + idx);
+			eval('shape.setAttribute("style", attributesToString(' + ZOrders[i].type + 'sAttributes[' + idx + ']))');
+			svgDocument.appendChild(shape);
+		}
 	}
 
 	return;
@@ -927,7 +1071,7 @@ function setAnimationParameters(){
 
 		property_length = 'x';
 
-		if(shape_tags[i] == 'line') property_length = 'x1';
+		if(shape_tags[i] == 'line' || shape_tags[i] == 'arrow') property_length = 'x1';
 
 		eval('if(' + shape_tags[i] + 'sAnimate.length){' + shape_tags[i] + 's_animate = true;' + 
 			'}else{' + shape_tags[i] + 's_animate = false;}');
@@ -939,12 +1083,27 @@ function setAnimationParameters(){
 		eval('if(' + shape_tags[i] + 'sAttributesAnimate.length){' + shape_tags[i] + 's_attributes_animate = true;' + 
 			'}else{' + shape_tags[i] + 's_attributes_animate = false;}');
 	}
+
+	if(document.getElementById('animation_frame_count_input') == null) return;
+
+	// If there is no animation, hide animation controls
+	if(animation_length == 0){
+		document.getElementById('control_animation_container').style.display = 'none';
+		return;
+	}
+
+	// Update animation control max
+	document.getElementById('animation_frame_count_input').max = animation_length;
+
+	// Update animation duration
+	document.getElementById('animation_duration_input').value = animation_duration;
+	
+	// Set animation reverse setting
+	document.getElementById('animation_reverse_checkbox').checked = animation_reverse;
 }
 
 function startAnimation(){
-	if(animation_reverse){var animation_duration_n = animation_duration/2;}else{var animation_duration_n = animation_duration;}
-	var animation_interval = (animation_duration_n*1000) / animation_length;
-	intervalID = setInterval(animateShapes, Math.round(animation_interval));
+	intervalID = setInterval(animateShapes, Math.round((animation_duration*1000) / animation_length));
 }
 
 function svg_path_string_to_array(string){
@@ -1014,10 +1173,8 @@ function updateShapes(){
 	var shape;
 
 	var i, j, k, n_i0, n_i1, pathd, u, u1, u2, len;
-	var circle, line, n_i, type, visibility, vec;
+	var circle, n_i, type, visibility, vec;
 	var x, y, x1, x2, y1, y2;
-
-	wsize_proj = getWindowSizeProjection();
 
 	// Find perspective projections for shapes
 	for (i = 0, len = shape_tags.length; i < len; i++){
@@ -1031,6 +1188,14 @@ function updateShapes(){
 		shape.setAttribute("r", circles_proj[i].r);
 	}
 
+	for (i = 0, len = images_proj.length; i < len; i++) {
+		var shape = svgDocument.getElementById('image' + i);
+		shape.setAttribute("x", images_proj[i].x1);
+		shape.setAttribute("y", images_proj[i].y1);
+		shape.setAttribute("height", images_proj[i].y2-images_proj[i].y1);
+		shape.setAttribute("width", images_proj[i].x2-images_proj[i].x1);
+	}
+
 	for (i = 0, len = lines_proj.length; i < len; i++) {
 		var shape = svgDocument.getElementById('line' + i);
 		shape.setAttribute("x1", lines_proj[i].x1);
@@ -1039,16 +1204,42 @@ function updateShapes(){
 		shape.setAttribute("y2", lines_proj[i].y2);
 	}
 
+	for (i = 0, len = arrows_proj.length; i < len; i++) {
+		var shape = svgDocument.getElementById('arrow' + i);
+		shape.setAttribute("x1", arrows_proj[i].x1);
+		shape.setAttribute("y1", arrows_proj[i].y1);
+		shape.setAttribute("x2", arrows_proj[i].x2);
+		shape.setAttribute("y2", arrows_proj[i].y2);
+
+		// Arrow head (1st half)
+		var shape = svgDocument.getElementById('arrowha' + i);
+		shape.setAttribute("x1", arrows_proj[i].x2);
+		shape.setAttribute("y1", arrows_proj[i].y2);
+		shape.setAttribute("x2", arrows_proj[i].hax);
+		shape.setAttribute("y2", arrows_proj[i].hay);
+
+		// Arrow head (2nd half)
+		var shape = svgDocument.getElementById('arrowhb' + i);
+		shape.setAttribute("x1", arrows_proj[i].x2);
+		shape.setAttribute("y1", arrows_proj[i].y2);
+		shape.setAttribute("x2", arrows_proj[i].hbx);
+		shape.setAttribute("y2", arrows_proj[i].hby);
+	}
+
 	for (i = 0, len = texts_proj.length; i < len; i++) {
 		var shape = svgDocument.getElementById('text' + i);
 		shape.setAttribute("x", texts_proj[i].x);
 		shape.setAttribute("y", texts_proj[i].y);
+		shape.setAttribute("font-size", 'font-size:' + texts_proj[i].s + 'px');
+		textsAttributes[i].font_size = texts_proj[i].s;
+		shape.setAttribute("style", attributesToString(textsAttributes[i]));
 	}
 
 	for (i = 0, len = points_proj.length; i < len; i++) {
 		var shape = svgDocument.getElementById('point' + i);
 		shape.setAttribute("cx", points_proj[i].x);
 		shape.setAttribute("cy", points_proj[i].y);
+		if(isNaN(points_proj[i].x)){shape.setAttribute("visibility", "hidden");}else{shape.setAttribute("visibility", "");}
 	}
 
 	for (i = 0, len = paths_proj.length; i < len; i++) {
