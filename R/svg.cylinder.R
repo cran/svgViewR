@@ -1,22 +1,44 @@
-svg.cylinder <- function(ends=rbind(c(0,0,0), c(1,0,0)), radius=1, axis=NULL, length=NULL, 
-	rseg=20, hseg=2, open.ended=FALSE, theta.start=0, theta.length=2*pi, col='blue', 
-	emissive=rgb(0.03, 0.15, 0.21), name='cylinder'){
+svg.cylinder <- function(ends=NULL, center=NULL, radius=1, axis=NULL, 
+	length=NULL, rseg=20, hseg=2, open.ended=FALSE, theta.start=0, theta.length=2*pi, col='blue', 
+	emissive=rgb(0.03, 0.15, 0.21), opacity = 1, ontop = FALSE, name='cylinder'){
 
 	# Make sure that type is webgl
-	#if('live' != getOption("svgviewr_glo_type")) stop("Cylinder drawing is currently only available with webgl svgViewR output.")
+	if('svg' == getOption("svgviewr_glo_type")) stop("'webgl' mode must be used to enable mesh drawing. This can be done by adding the following parameter to the svg.new() function call: mode='webgl'. This will become the default mode by version 1.4.")
 
 	## Create mesh
-	# If ends is single point, use axis to find other end point
-	if(is.vector(ends) || nrow(ends) == 1){
-	
-		# Check that vector and length are specified
-		if(is.null(axis) || is.null(length)) stop("If 'ends' is a single point then 'axis' and 'length' must both be non-NULL.")
+	if(!is.null(axis)){
 
 		# Convert from array
 		if(length(dim(axis)) == 3) axis <- axis[,,1]
 
 		# Make sure vector is unit length
 		axis <- uvector_svg(axis)
+		
+		# Make sure axis is matrix
+		if(is.vector(axis)) axis <- matrix(axis, 1, 3)
+	}
+
+	# Center input
+	if(!is.null(center)){
+
+		#
+		if(!is.null(ends)) stop("'ends' and 'center' cannot both be non-NULL")
+		
+		# Check that vector and length are specified
+		if(is.null(axis) || is.null(length)) stop("If 'center' is non-NULL then 'axis' and 'length' must both be non-NULL.")
+
+		# Set ends from center
+		ends <- rbind(
+			center + (length/2)*axis[1,],
+			center - (length/2)*axis[1,]
+		)
+	}
+
+	# If ends is single point, use axis to find other end point
+	if(is.vector(ends) || nrow(ends) == 1){
+	
+		# Check that vector and length are specified
+		if(is.null(axis) || is.null(length)) stop("If 'ends' is a single point then 'axis' and 'length' must both be non-NULL.")
 
 		# Find ends
 		ends <- rbind(ends, ends + length*axis)
@@ -153,10 +175,13 @@ svg.cylinder <- function(ends=rbind(c(0,0,0), c(1,0,0)), radius=1, axis=NULL, le
 			svgviewr_env$svg$mesh[[add_at]] <- list()
 			svgviewr_env$svg$mesh[[add_at]]$vertices <- t(vertices)
 			svgviewr_env$svg$mesh[[add_at]]$faces <- t(faces)
-			svgviewr_env$svg$mesh[[add_at]]$col <- webColor(col)
-			svgviewr_env$svg$mesh[[add_at]]$emissive <- webColor(emissive)
+			svgviewr_env$svg$mesh[[add_at]]$itmat <- diag(4)
+			svgviewr_env$svg$mesh[[add_at]]$col <- setNames(webColor(col), NULL)
+			svgviewr_env$svg$mesh[[add_at]]$opacity <- setNames(opacity, NULL)
+			svgviewr_env$svg$mesh[[add_at]]$emissive <- setNames(webColor(emissive), NULL)
 			svgviewr_env$svg$mesh[[add_at]]$computeVN <- TRUE
 			svgviewr_env$svg$mesh[[add_at]]$parseModel <- FALSE
+			svgviewr_env$svg$mesh[[add_at]]$depthTest <- !ontop
 
 			# Add object reference data
 			svgviewr_env$ref$names <- c(svgviewr_env$ref$names, name)
@@ -177,10 +202,3 @@ svg.cylinder <- function(ends=rbind(c(0,0,0), c(1,0,0)), radius=1, axis=NULL, le
 
 	ret = NULL
 }
-
-#var geometry = new THREE.CylinderGeometry( 5, 5, 20, 32 );
-#var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
-#var cylinder = new THREE.Mesh( geometry, material );
-#scene.add( cylinder );
-
-#CylinderGeometry(radiusTop, radiusBottom, height, radiusSegments, heightSegments, openEnded, thetaStart, thetaLength)

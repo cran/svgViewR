@@ -1,57 +1,41 @@
 readOBJ <- function(file, scaling = 1){
 
-	# Shapes to remove
-	shape.rm <- c('l')
-
 	# Read lines
-	read_lines <- suppressWarnings(readLines(file))
+	read_lines <- suppressWarnings(readLines(con=file))
+	
+	# Paste into string
+	obj_str <- paste0(paste0(read_lines, collapse="*"), '*')
 
-	# Get vertex lines
-	vertices <- read_lines[grepl('^v ', read_lines)]
+	# Use C++ function to read string
+	read_obj <- read_obj_str(obj_str)
 	
 	# Convert to matrix
-	vertices <- matrix(as.numeric(unlist(lapply(strsplit(x=vertices, split=' '), tail, 3))), nrow=length(vertices), ncol=3, byrow=TRUE)
+	vertices <- matrix(read_obj$vertices, nrow=length(read_obj$vertices)/3, ncol=3, byrow=TRUE)*scaling
 	
-	# Apply scaling
-	vertices <- vertices * scaling
-
 	# Get vertex normals
 	normals <- read_lines[grepl('^vn ', read_lines)]
 
 	# Convert to matrix
-	normals <- matrix(as.numeric(unlist(lapply(strsplit(x=normals, split=' '), tail, 3))), nrow=length(normals), ncol=3, byrow=TRUE)
+	normals <- matrix(read_obj$normals, nrow=length(read_obj$normals)/3, ncol=3, byrow=TRUE)
 	
-	# Get face lines
-	faces <- read_lines[grepl('^f ', read_lines)]
-
 	# Convert to matrix
-	faces <- matrix(as.numeric(unlist(lapply(strsplit(x=faces, split=' |//'), tail, 6))), nrow=length(faces), ncol=6, byrow=TRUE)
+	faces <- matrix(read_obj$faces, nrow=length(read_obj$faces)/6, ncol=6, byrow=TRUE)
 
-	# Take every other - not sure why these are repeated
-	faces <- faces[, c(1,3,5)]
-
-	# Get vertex normals
+	# Get lines
 	l_lines <- read_lines[grepl('^l ', read_lines)]
 	
 	# Convert to matrix
-	if(length(l_lines) > 0){
-
-		l_lines <- matrix(as.numeric(unlist(lapply(strsplit(x=l_lines, split=' |//'), tail, 2))), nrow=length(l_lines), ncol=2, byrow=TRUE)
-
-		# 
-		if('l' %in% shape.rm){
-		
-			#
-			max_l_lines <- max(l_lines)
-			vertices <- vertices[(max_l_lines+1):nrow(vertices), ]
-			faces <- faces - max_l_lines
-		}
+	if(!is.null(read_obj$lines)){
+		lines_mat <- matrix(read_obj$lines, nrow=length(read_obj$lines)/2, ncol=2, byrow=TRUE)
+	}else{
+		lines_mat <- NULL
 	}
 
 	obj <- list(
 		'vertices'=vertices,
 		'normals'=normals,
 		'faces'=faces,
+		'lines'=lines_mat,
 		'uvs'=c(),
 		'metadata'=list(
 			'version'=1,
@@ -64,7 +48,7 @@ readOBJ <- function(file, scaling = 1){
 		)
 	)
 	class(obj) <- 'obj'
-	
+
 	obj
 }
 
@@ -73,14 +57,23 @@ print.obj <- function(x, ...){
 	rc <- ''
 
 	rc <- c(rc, paste0('$vertices (', paste0(dim(x$vertices), collapse='x'), ')', '\n'))
-	rc <- c(rc, paste0('\t', paste0(capture.output(print(head(x$vertices))), collapse='\n\t'), '\n'))
-	if(nrow(x$vertices) > 6) rc <- c(rc, '\t...\n')
+	rc <- c(rc, paste0('\t', paste0(capture.output(print(head(x$vertices, n=2))), collapse='\n\t'), '\n'))
+	if(nrow(x$vertices) > 2){
+		rc <- c(rc, '\t...\n')
+		rc <- c(rc, paste0('\t', paste0(capture.output(print(tail(x$vertices, n=min(2,nrow(x$vertices)-2)))), collapse='\n\t'), '\n'))
+	}
 	rc <- c(rc, paste0('$normals (', paste0(dim(x$normals), collapse='x'), ')', '\n'))
-	rc <- c(rc, paste0('\t', paste0(capture.output(print(head(x$normals))), collapse='\n\t'), '\n'))
-	if(nrow(x$normals) > 6) rc <- c(rc, '\t...\n')
-	rc <- c(rc, paste0('$faces (', paste0(dim(x$faces), collapse='x'), ')', '\n'))
-	rc <- c(rc, paste0('\t', paste0(capture.output(print(head(x$faces))), collapse='\n\t'), '\n'))
-	if(nrow(x$faces) > 6) rc <- c(rc, '\t...\n')
+	rc <- c(rc, paste0('\t', paste0(capture.output(print(head(x$normals, n=2))), collapse='\n\t'), '\n'))
+	if(nrow(x$normals) > 2){
+		rc <- c(rc, '\t...\n')
+		rc <- c(rc, paste0('\t', paste0(capture.output(print(tail(x$normals, n=min(2,nrow(x$normals)-2)))), collapse='\n\t'), '\n'))
+	}
+	rc <- c(rc, paste0('$faces (', paste0(dim(x$faces), collapse='x'), ', range:', min(x$faces), '-', max(x$faces), ')', '\n'))
+	rc <- c(rc, paste0('\t', paste0(capture.output(print(head(x$faces, n=2))), collapse='\n\t'), '\n'))
+	if(nrow(x$faces) > 2){
+		rc <- c(rc, '\t...\n')
+		rc <- c(rc, paste0('\t', paste0(capture.output(print(tail(x$faces, n=min(2,nrow(x$faces)-2)))), collapse='\n\t'), '\n'))
+	}
 
 	cat(rc, sep='')
 }

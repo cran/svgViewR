@@ -5,6 +5,8 @@
  * @author Luca Antiga 	/ http://lantiga.github.io
  */
 
+var key_down = false;
+
 THREE.TrackballControls = function ( object, domElement ) {
 
 	var _this = this;
@@ -353,15 +355,31 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 	function keydown( event ) {
 
+		// Keep render active
+		playPauseRender('play');
+
+		// Set key_down to true
+		key_down = true;
+
+		if(debug) document.getElementById( "alert" ).innerHTML = 'keydown: ' + event.keyCode;
+
 		if ( _this.enabled === false ) return;
 
-		//document.getElementById( "alert" ).innerHTML = event.keyCode;
+		//window.removeEventListener( 'keydown', keydown );
 
-		window.removeEventListener( 'keydown', keydown );
+		if ( event.keyCode == 17 ) { // Pressing control
+			
+			// Clear state
+			_state = -1;
+		}
+
+		if(debug) document.getElementById( "alert" ).innerHTML = document.getElementById( "alert" ).innerHTML + ' _state: ' + _state;
 
 		_prevState = _state;
 
 		if ( _state !== STATE.NONE ) {
+
+			if(debug) document.getElementById( "alert" ).innerHTML = document.getElementById( "alert" ).innerHTML + ' _state !== STATE.NONE ';
 
 			return;
 
@@ -372,6 +390,12 @@ THREE.TrackballControls = function ( object, domElement ) {
 		} else if ( event.keyCode === _this.keys[ STATE.ZOOM ] && ! _this.noZoom ) {
 
 			_state = STATE.ZOOM;
+
+		} else if ( event.keyCode == 17 && ! _this.noPan ) { // Pressing command
+
+			if(debug) document.getElementById( "alert" ).innerHTML = document.getElementById( "alert" ).innerHTML + ' set _state to "STATE.PAN"';
+
+			_state = STATE.PAN;
 
 		} else if ( event.keyCode === _this.keys[ STATE.PAN ] && ! _this.noPan ) {
 
@@ -405,59 +429,80 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 			// Clear listener so that holding down key does continuous panning
 			window.addEventListener( 'keydown', keydown, false );
-
 		}
 
 	}
 
 	function keyup( event ) {
+	
+		// Keep render active
+		playPauseRender('play');
+
+		key_down = false;
 
 		if ( _this.enabled === false ) return;
 
 		_state = _prevState;
 
-		window.addEventListener( 'keydown', keydown, false );
+		if(debug) document.getElementById( "alert" ).innerHTML = 'keyup' + ' _state: ' + _state;
 
+		window.addEventListener( 'keydown', keydown, false );
 	}
 
 	function mousedown( event ) {
+	
+		// Keep render active
+		playPauseRender('play');
 
-		if ( _this.enabled === false ) return;
+		// If bottom frame is not hidden, check whether mouse is over timeline
+		if(bottom_frame_hidden === false && event.pageY > bottom_frame_start_y){
 
-		event.preventDefault();
-		event.stopPropagation();
+			// Mousedown in the bottom frame
 
-		if ( _state === STATE.NONE ) {
+		}else{
 
-			_state = event.button;
+			if ( _this.enabled === false ) return;
 
+			if(debug) document.getElementById( "alert" ).innerHTML = 'mousedown, event.which=' + event.which + ', _state=' + _state;
+
+			// Prevents normal mousedown events from being triggered (e.g. selecting text, etc.)
+			event.preventDefault();
+			event.stopPropagation();
+
+			if ( _state === STATE.NONE ) {
+
+				_state = event.button;
+
+			}
+
+			if ( _state === STATE.ROTATE && ! _this.noRotate ) {
+
+				_moveCurr.copy( getMouseOnCircle( event.pageX, event.pageY ) );
+				_movePrev.copy( _moveCurr );
+
+			} else if ( _state === STATE.ZOOM && ! _this.noZoom ) {
+
+				_zoomStart.copy( getMouseOnScreen( event.pageX, event.pageY ) );
+				_zoomEnd.copy( _zoomStart );
+
+			} else if ( _state === STATE.PAN && ! _this.noPan ) {
+
+				_panStart.copy( getMouseOnScreen( event.pageX, event.pageY ) );
+				_panEnd.copy( _panStart );
+
+			}
+
+			document.addEventListener( 'mousemove', mousemove, false );
+			document.addEventListener( 'mouseup', mouseup, false );
+
+			_this.dispatchEvent( startEvent );
 		}
-
-		if ( _state === STATE.ROTATE && ! _this.noRotate ) {
-
-			_moveCurr.copy( getMouseOnCircle( event.pageX, event.pageY ) );
-			_movePrev.copy( _moveCurr );
-
-		} else if ( _state === STATE.ZOOM && ! _this.noZoom ) {
-
-			_zoomStart.copy( getMouseOnScreen( event.pageX, event.pageY ) );
-			_zoomEnd.copy( _zoomStart );
-
-		} else if ( _state === STATE.PAN && ! _this.noPan ) {
-
-			_panStart.copy( getMouseOnScreen( event.pageX, event.pageY ) );
-			_panEnd.copy( _panStart );
-
-		}
-
-		document.addEventListener( 'mousemove', mousemove, false );
-		document.addEventListener( 'mouseup', mouseup, false );
-
-		_this.dispatchEvent( startEvent );
-
 	}
 
 	function mousemove( event ) {
+
+		// Keep render active
+		playPauseRender('play');
 
 		if ( _this.enabled === false ) return;
 
@@ -483,12 +528,25 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 	function mouseup( event ) {
 
+		// Keep render active
+		playPauseRender('play');
+
 		if ( _this.enabled === false ) return;
+
+		if(debug) document.getElementById( "alert" ).innerHTML = 'mouseup, event.which=' + event.which + ', _state=' + _state;
+
+		// If right-click mouseup, set state to none
+		if(key_down === false){
+			switch (event.which) {
+				case 1: // Left
+				case 2: // Middle
+				case 3: // Right
+					_state = STATE.NONE
+			}
+		}
 
 		event.preventDefault();
 		event.stopPropagation();
-
-		_state = STATE.NONE;
 
 		document.removeEventListener( 'mousemove', mousemove );
 		document.removeEventListener( 'mouseup', mouseup );
@@ -497,6 +555,9 @@ THREE.TrackballControls = function ( object, domElement ) {
 	}
 
 	function mousewheel( event ) {
+
+		// Keep render active
+		playPauseRender('play');
 
 		if ( _this.enabled === false ) return;
 
@@ -529,6 +590,9 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 	function touchstart( event ) {
 
+		// Keep render active
+		playPauseRender('play');
+
 		if ( _this.enabled === false ) return;
 
 		switch ( event.touches.length ) {
@@ -559,6 +623,9 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 	function touchmove( event ) {
 
+		// Keep render active
+		playPauseRender('play');
+
 		if ( _this.enabled === false ) return;
 
 		event.preventDefault();
@@ -586,6 +653,9 @@ THREE.TrackballControls = function ( object, domElement ) {
 	}
 
 	function touchend( event ) {
+
+		// Keep render active
+		playPauseRender('play');
 
 		if ( _this.enabled === false ) return;
 

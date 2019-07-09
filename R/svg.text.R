@@ -28,6 +28,8 @@ svg.text <- function(x, y = NULL, labels = NULL, layer="", name="text",
 
 		# Convert to matrix if vector
 		if(is.vector(x)) x <- matrix(x, nrow=1, )
+		
+		colnames(x) <- NULL
 
 		if(length(dim(x)) == 2){
 
@@ -36,7 +38,7 @@ svg.text <- function(x, y = NULL, labels = NULL, layer="", name="text",
 				# Add text to environment
 				add_at <- length(svgviewr_env$svg$text)+1
 				svgviewr_env$svg$text[[add_at]] <- list('type'='text', 'labels'=as.character(labels[i]), 
-					'name'=name, 'x'=x[i,], 'col'=webColor(col), 'size'=size)
+					'name'=name, 'x'=x[i,], 'col'=setNames(webColor(col), NULL), 'size'=size)
 
 				# Add object reference data
 				svgviewr_env$ref$names <- c(svgviewr_env$ref$names, name)
