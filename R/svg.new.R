@@ -3,11 +3,13 @@ svgviewr_env <- new.env(parent = emptyenv())
 svg.new <- function(file = NULL, window.title="svgViewR", animate.duration = 1, 
 	animate.speed = 1, interpolate = TRUE, timeline = TRUE, 
 	mode = c('svg', 'webgl'), animate.reverse = FALSE, animate.repeat = -1, 
-	margin = 20, col = "white", times = NULL, clock = FALSE, stats = FALSE, 
-	show.control = TRUE, start.rotate = TRUE, rotate.speed = 1.2, 
+	margin = 20, col = "white", times = NULL, clock = FALSE, stats = FALSE, panel = FALSE, 
+	show.control = TRUE, start.rotate = TRUE, rotate.speed = 1.2, camera.near = 0.01, fov = 45, 
 	zoom.speed = 1, pan.speed = 0.2, layers = NULL, connection = TRUE, 
 	close.on.done = TRUE, file.type = NULL, app.dir.src = NULL, debug = FALSE, 
 	src.link = NULL){
+	
+	# src.link=TRUE'Users/aaron/Documents/GitHub/svgViewR/inst/extdata' ???
 
 	digits <- 6
 	
@@ -158,7 +160,7 @@ svg.new <- function(file = NULL, window.title="svgViewR", animate.duration = 1,
 		}else{
 			svgviewr_env$js_var[['bottom_frame_hidden']] <- TRUE
 		}
-
+		
 		# Set javascript variables
 		svgviewr_env$js_var[['anim_pause']] <- FALSE	# Start with animation playing
 		svgviewr_env$js_var[['bg_col']] <- setNames(webColor(col, format='0'), NULL)
@@ -178,12 +180,21 @@ svg.new <- function(file = NULL, window.title="svgViewR", animate.duration = 1,
 		svgviewr_env$js_var[['save_as_img_dir']] <- save_as_img_dir
 		svgviewr_env$js_var[['save_as_img_type']] <- file.type
 		svgviewr_env$js_var[['save_as_img_paths']] <- save_as_img_paths
+		svgviewr_env$js_var[['camera_near']] <- camera.near
+		svgviewr_env$js_var[['camera_fov']] <- fov
 		svgviewr_env$js_var[['save_as_img_close']] <- close.on.done
 		svgviewr_env$js_var[['signif_digits']] <- digits
 		svgviewr_env$js_var[['time_units']] <- 'sec'
 		svgviewr_env$js_var[['window_title']] <- window.title
 		svgviewr_env$js_var[['zoomSpeed']] <- zoom.speed
 		
+		# Add panel if TRUE
+		if(panel){
+			svg.panel()
+		}else{
+			svgviewr_env$js_var[['panel']] <- FALSE
+		}
+
 		# Create name reference
 		svgviewr_env$ref <- list()
 
@@ -225,11 +236,15 @@ svg.new <- function(file = NULL, window.title="svgViewR", animate.duration = 1,
 		}
 
 		if(!is.null(times)){
+
 			# If times do not start at 0, shift to start at 0
 			if(times[1] != 0) times <- times - min(times, na.rm=TRUE)
 
 			# Set times
 			svgviewr_env$svg[['animate']][['times']] <- times
+
+			# Set number of timelines
+			#svgviewr_env$js_var[['n_timelines']] <- 1
 		}
 
 	}else{

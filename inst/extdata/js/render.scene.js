@@ -200,6 +200,9 @@ function addMeshToScene( geometry, materials ) {
 		meshes[mesh_load_ct].rotation.y = svg_obj.mesh[mesh_load_ct].irotation[1];
 		meshes[mesh_load_ct].rotation.z = svg_obj.mesh[mesh_load_ct].irotation[2];
 	}
+	
+	// Set visibility to true by default
+	svg_obj.mesh[mesh_load_ct].visible = true;
 
 	// If additional meshes, load next mesh
 	if(mesh_load_ct+1 < svg_obj.mesh.length){
@@ -560,11 +563,18 @@ function loadGeometries(){
 		for(i = 0; i < lines_length; i++){
 
 			// Set line material
-			material = new THREE.LineBasicMaterial({
-				color: svg_obj.line[i].col,
-				linewidth: svg_obj.line[i].lwd,
-				depthTest: svg_obj.line[i].depthTest
-			});
+			if(false){
+				//material = new MeshLineMaterial({
+				//	color: svg_obj.line[i].col,
+				//	linewidth: svg_obj.line[i].lwd
+				//});
+			}else{
+				material = new THREE.LineBasicMaterial({
+					color: svg_obj.line[i].col,
+					linewidth: svg_obj.line[i].lwd,
+					depthTest: svg_obj.line[i].depthTest
+				});
+			}
 
 			// Set line opacity
 			if(svg_obj.line[i].opacity < 1){
@@ -585,7 +595,13 @@ function loadGeometries(){
 			}
 
 			// Create line
-			line = new THREE.Line( geometry, material );
+			if(true){
+				line = new THREE.Line( geometry, material );
+			}else{
+				mesh_line = new MeshLine();
+				mesh_line.setGeometry( geometry );
+				line = new THREE.Mesh( mesh_line.geometry, material );
+			}
 
 			// Check if position over time is specified
 			if(svg_obj.line[i].x_tm != undefined){
@@ -599,9 +615,9 @@ function loadGeometries(){
 			}
 
 			// Set name and number of segments
-			line.name = 'line' + i;
+			line.name = svg_obj.line[i].name;
 
-			// Add to meshes
+			// Add to lines
 			lines.push(line)
 
 			// Add to scene
@@ -751,7 +767,7 @@ function loadGeometries(){
 			}
 
 			// Set name
-			mesh.name = 'sphere' + n;
+			mesh.name = svg_obj.sphere[i].name;
 		
 			// Apply any initial transformations
 			if(svg_obj.sphere[i].iposition != undefined){
@@ -800,51 +816,64 @@ function loadNextMesh(){
 	}
 
 	if(svg_obj.mesh[mesh_load_ct].src_idx == undefined){
-		
-		var i, material, mesh, num_faces, num_vertices, vertex, face;
+
+		var i, material, mesh, num_faces, num_vertices, vertex, face, double_side;
 		
 		// Get mesh object
 		mesh = svg_obj.mesh[mesh_load_ct];
 
+		if(mesh.doubleSide == undefined) svg_obj.mesh[mesh_load_ct].doubleSide = true;
+		if(mesh.doubleSide == true){ double_side = THREE.DoubleSide; }else{ double_side = false; }
+
+		// Create geometry
 		if(mesh.parseModel){
 
-			// Create geometry
 			var geometry = new THREE.Geometry();
 			geometry = parseModel( mesh, geometry );
-			material = new THREE.MeshLambertMaterial( { color:mesh.col, emissive: mesh.emissive } );
 
 		}else{
-
 			// Get mesh vertices and faces
 			geometry = parseMeshGeometry(mesh);
 
 			geometry.computeFaceNormals();
-			if(svg_obj.mesh[mesh_load_ct].computeVN == true) geometry.computeVertexNormals();
+			if(mesh.computeVN == true) geometry.computeVertexNormals();
+		}
+
+		// Set material
+		if(mesh.material == 'lambert'){
+
+			material = new THREE.MeshLambertMaterial( { 
+					color:mesh.col, 
+					emissive: mesh.emissive,
+					side: double_side
+				} );
+
+		}else{
 
 			material = new THREE.MeshPhongMaterial( {
 						color: mesh.col,
 						emissive: mesh.emissive,
-						side: THREE.DoubleSide,
+						side: double_side,
 						//flatShading: true
 					} )
 		}
 
 		// Set mesh name
-		mesh_name = svg_obj.mesh[mesh_load_ct].name;
-		mesh_opacity = svg_obj.mesh[mesh_load_ct].opacity;
-		mesh_color = svg_obj.mesh[mesh_load_ct].col;
-		mesh_depthTest = svg_obj.mesh[mesh_load_ct].depthTest;
-		//mesh_depthWrite = false; //svg_obj.mesh[mesh_load_ct].depthWrite;
+		mesh_name = mesh.name;
+		mesh_opacity = mesh.opacity;
+		mesh_color = mesh.col;
+		mesh_depthTest = mesh.depthTest;
+		//mesh_depthWrite = false; //mesh.depthWrite;
 
 		// Check if there's a deformation
-		if(svg_obj.mesh[mesh_load_ct].deform != undefined){
+		if(mesh.deform != undefined){
 
 			// Copy vertices
 			deform_obj.num.push(mesh_load_ct);
 			deform_obj.type.push('mesh');
 
 			var nVertices = geometry.vertices.length;
-			svg_obj.mesh[mesh_load_ct].clone_vertices = new Array();
+			mesh.clone_vertices = new Array();
 
 			for(i = 0; i < nVertices; i++) {
 				svg_obj.mesh[mesh_load_ct].clone_vertices[i] = geometry.vertices[i].clone();
@@ -961,7 +990,7 @@ function onObjectsReady(){
 		for(i = 0; i < cameras_length; i++){
 			
 			// Setup the camera
-			camera = new THREE.PerspectiveCamera( fov=45, aspect=window_dims.width / window_dims.height, near=0.1, far=svg_obj.camera[i].far );
+			camera = new THREE.PerspectiveCamera( fov=45, aspect=window_dims.width / window_dims.height, near=camera_near, far=svg_obj.camera[i].far );
 
 			// Set camera position
 			camera.position.set(svg_obj.camera[i].x[0], svg_obj.camera[i].x[1], svg_obj.camera[i].x[2]);
@@ -986,7 +1015,7 @@ function onObjectsReady(){
 	}else{
 
 		// Setup a camera
-		camera = new THREE.PerspectiveCamera( fov=45, aspect=window_dims.width / window_dims.height, near=0.1, far=bbox_size*20 );
+		camera = new THREE.PerspectiveCamera( fov=camera_fov, aspect=window_dims.width / window_dims.height, near=camera_near, far=bbox_size*20 );
 
 		// Set camera to controls
 		controls = new THREE.TrackballControls( camera );
@@ -1521,7 +1550,14 @@ function printAlert2(text){
 }
 
 function printObject(object){
-   	 document.getElementById("alert2").innerHTML = Object.values(object);
+
+	if(typeof(object) == 'undefined'){
+		document.getElementById("alert2").innerHTML = object;
+	}else if(typeof(object) == 'number'){
+		document.getElementById("alert2").innerHTML = object;
+	}else{
+		document.getElementById("alert2").innerHTML = Object.values(object);
+	}
 }
 
 function setBoundingBox () {
@@ -1633,8 +1669,7 @@ function setBoundingBox () {
 	bbox_center = [ bbox_scale[0]/2 + bbox_new.min.x, bbox_scale[1]/2 + bbox_new.min.y, bbox_scale[2]/2 + bbox_new.min.z ];
 	bbox_size = (bbox_scale[0] + bbox_scale[1] + bbox_scale[2]) / 3;
 
-//alert(minX + ',' + minY + ',' + minZ)
-//alert(maxX + ',' + maxY + ',' + maxZ)
+	//alert(minX + ',' + minY + ',' + minZ + ',' + maxX + ',' + maxY + ',' + maxZ)
 
 	// Draw bounding box as wireframe
 	if(false){
@@ -1916,6 +1951,37 @@ function skipToAnimationFrame(to, num){
     anim_pause_time = anim_pause_start + elapsed_ms;
 }
 
+function toggleVisibility(box_elem){
+
+	var i, opacity;
+
+	if(box_elem.checked){
+		change_to = true;
+	}else{
+		change_to = false;
+	}
+
+	if(svg_obj.mesh != undefined){
+		for (i = 0; i < meshes.length; i++){
+			if(meshes[i].name == box_elem.value){
+
+				meshes[i].visible = change_to;
+				svg_obj.mesh[i].visible = change_to;
+			}
+		}
+	}
+	if(svg_obj.line != undefined){
+		for (i = 0; i < lines.length; i++){
+			if(lines[i].name == box_elem.value) lines[i].visible = change_to;
+		}
+	}
+	if(svg_obj.sphere != undefined){
+		for (i = 0; i < spheres.length; i++){
+			if(spheres[i].name == box_elem.value) spheres[i].visible = change_to;
+		}
+	}
+}
+
 function updateAnimationIcons(state){
 
 	var i;
@@ -2056,6 +2122,7 @@ function updateShapes(time_index){
 		var time_index_floor = new Array(n_timelines);
 		var time_index_ceil = new Array(n_timelines);
    		var ratio_x, ratio_y, ratio_z;
+   		var opacity_t;
    		
 		// Set floor and ceiling from time indices
 		for (j = 0; j < n_timelines; j++){
@@ -2071,20 +2138,16 @@ function updateShapes(time_index){
 		}
 
 		// Set ratios for interpolation
-		if(n_timelines == 1){
-			ratio_x = time_index[0] - time_index_floor[0];
-		} else if(n_timelines == 2){
-			ratio_y = time_index[1] - time_index_floor[1];
-		} else if(n_timelines == 3){
-			ratio_z = time_index[2] - time_index_floor[2];
-		}
+		ratio_x = time_index[0] - time_index_floor[0];
+		if(n_timelines > 1) ratio_y = time_index[1] - time_index_floor[1];
+		if(n_timelines > 2) ratio_z = time_index[2] - time_index_floor[2];
 
 		for (i = 0; i < update_obj_length; i++){
 
 			// Set object number and type
 			obj_num = update_obj.num[i];
 			obj_type = update_obj.type[i];
-			
+
 			if(obj_type == 'mesh'){
 
 				// Create a quaternion based on user specified time index
@@ -2093,7 +2156,6 @@ function updateShapes(time_index){
 									svg_obj.mesh[obj_num].quaternion[time_index_ceil[0]], ratio_x)
 					new_pos = interpolate1D(svg_obj.mesh[obj_num].position[time_index_floor[0]], 
 									svg_obj.mesh[obj_num].position[time_index_ceil[0]], ratio_x)
-
 
 				}else if(n_timelines == 2){	
 
@@ -2132,13 +2194,27 @@ function updateShapes(time_index){
 										svg_obj.mesh[obj_num].position[time_index_ceil[0]][time_index_ceil[1]][time_index_ceil[2]], 
 										ratio_x, ratio_y, ratio_z);
 				}
-								
+				
 				meshes[obj_num].position.set(new_pos.x, new_pos.y, new_pos.z);
 				meshes[obj_num].quaternion.set(new_quat.x, new_quat.y, new_quat.z, new_quat.w);
 
 				// If opacity is animated
 				if(svg_obj.mesh[obj_num].opacity.length == animation_ntimes){
-					meshes[obj_num].material.opacity = svg_obj.mesh[obj_num].opacity[time_index[0]];
+
+					// Interpolate opacity value
+					opacity_t = (1 - ratio_x)*svg_obj.mesh[obj_num].opacity[time_index_floor[0]] + 
+						ratio_x*svg_obj.mesh[obj_num].opacity[time_index_ceil[0]];
+					
+					// User input mesh visibility takes priority over animation
+					if(svg_obj.mesh[i].visible == true){
+						if(opacity_t == 0){
+							meshes[obj_num].visible = false;
+						}else{
+							meshes[obj_num].visible = true;
+						}
+					}
+
+					meshes[obj_num].material.opacity = opacity_t;
 				}
 			}
 
@@ -2168,11 +2244,11 @@ function updateShapes(time_index){
 			}
 
 			if(obj_type == 'sphere'){
-
+			
 				// Get new position (treat as simple point positions, transformation is done in R)
 				new_pos = interpolate1D(svg_obj.sphere[obj_num].x_animated[time_index_floor[0]], 
 					svg_obj.sphere[obj_num].x_animated[time_index_ceil[0]], ratio_x)
-
+				
 				// Set new position and quaternion
 				spheres[obj_num].position.set(new_pos.x, new_pos.y, new_pos.z);
 				
@@ -2183,17 +2259,37 @@ function updateShapes(time_index){
 			}
 
 			if(obj_type == 'line'){
-
+			
 				// Update each segment
 				k = 0;
 				for(j = 0; j < svg_obj.line[obj_num].nseg*3; j = j + 3){
-					lines[obj_num].geometry.vertices[k].x = lines[obj_num].x_tm[time_index[0]][j];
-					lines[obj_num].geometry.vertices[k].y = lines[obj_num].x_tm[time_index[0]][j+1];
-					lines[obj_num].geometry.vertices[k].z = lines[obj_num].x_tm[time_index[0]][j+2];
+				
+					// Get new position (treat as simple point positions, transformation is done in R)
+					new_pos = interpolate1D({x:lines[obj_num].x_tm[time_index_floor[0]][j], y:lines[obj_num].x_tm[time_index_floor[0]][j+1], z:lines[obj_num].x_tm[time_index_floor[0]][j+2]}, 
+						{x:lines[obj_num].x_tm[time_index_ceil[0]][j], y:lines[obj_num].x_tm[time_index_ceil[0]][j+1], z:lines[obj_num].x_tm[time_index_ceil[0]][j+2]}, ratio_x)
+
+					if(true){
+						lines[obj_num].geometry.vertices[k].x = new_pos.x;
+						lines[obj_num].geometry.vertices[k].y = new_pos.y;
+						lines[obj_num].geometry.vertices[k].z = new_pos.z;
+					}else{
+						lines[obj_num].geometry.attributes.position.array[j*2+0] = new_pos.x;
+						lines[obj_num].geometry.attributes.position.array[j*2+1] = new_pos.y;
+						lines[obj_num].geometry.attributes.position.array[j*2+2] = new_pos.z;
+						lines[obj_num].geometry.attributes.position.array[j*2+3] = new_pos.x;
+						lines[obj_num].geometry.attributes.position.array[j*2+4] = new_pos.y;
+						lines[obj_num].geometry.attributes.position.array[j*2+5] = new_pos.z;
+					}
+
 					k++;
 				}
+
 				// Update vertices
-				lines[obj_num].geometry.verticesNeedUpdate = true;
+				if(true){
+					lines[obj_num].geometry.verticesNeedUpdate = true;
+				}else{
+					lines[obj_num].geometry.attributes.position.needsUpdate = true;
+				}
 			}
 		}
 	}
