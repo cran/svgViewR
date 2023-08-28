@@ -1,5 +1,5 @@
 \name{svgViewR-package}
-\alias{svgViewR}
+\alias{svgViewR-package}
 
 \alias{addMeshes}
 \alias{apply_transform_svg}
@@ -118,8 +118,8 @@
 \tabular{ll}{
 Package: \tab svgViewR\cr
 Type: \tab Package\cr
-Version: \tab 1.4.2\cr
-Date: \tab 2022-11-01\cr
+Version: \tab 1.4.3\cr
+Date: \tab 2023-08-28\cr
 License: \tab GPL (>= 2)\cr}}
 \author{
 Aaron Olsen (maintainer, <aarolsen@gmail.com>), Alejandro Romero

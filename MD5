@@ -1,4 +1,4 @@
-b7237cf49f880902177f715770825b94 *DESCRIPTION
+2a00925c5f4ed4aa7e488201e028704d *DESCRIPTION
 153038fd1b38167f63cad38ccfec5e92 *NAMESPACE
 967748a8a9ee30b95173c8ed25cecd58 *R/JSONToobj.R
 035d007c291b77204b81090e6488fca1 *R/RM2quat_svg.R
@@ -144,6 +144,6 @@ d44f9df05fe2d711c29afdbc0857fe5e *man/svg.lines.Rd
 401a3962d6c5e0f1ade50e81da0de3a0 *man/svg.new.Rd
 8bd4d44e1a2673984c5d43ef286ba01c *man/svg.pathsC.Rd
 ebcaeefe7911b15721b2031a59a3cc96 *man/svg.points.Rd
-5c63e43849ae98764da62ef78d39ac96 *man/svgViewR-package.Rd
+2a04715baed97ee42bf440f6fd80dce0 *man/svgViewR-package.Rd
 58641c50764e938bf79f19408e004e75 *src/RcppExports.cpp
 df01e8ff360c3a0742e0768476491638 *src/read_obj_str.cpp
